@@ -1,0 +1,27 @@
+# Ignore all current project files
+*.pptx
+*.docx
+*.pdf
+*.mp4
+*.csv
+*.png
+
+# Folders
+data/
+Images/
+other/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
