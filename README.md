@@ -124,7 +124,18 @@ Results are saved to `code/results/`.
 | mentor baseline | 0.979 | 0.290 | 0.617 | 0.909 | 0.755 | 0.710 |
 | **medium (64→32→16)** | **0.995** | **0.925** | **0.875** | **0.881** | **0.737** | **0.883** |
 
-**First model consistently better than mentor baseline (mean R² +0.173).**
+**Fair comparison (same split, same data):**
+
+| Dataset | Temp | Mentor R² | Phase4 R² | Δ R² | Winner |
+|---------|------|-----------|-----------|------|--------|
+| ds0 | 21°C | 0.9940 | 0.9906 | -0.003 | mentor |
+| ds1 | 33°C | 0.3094 | **0.9111** | +0.602 | phase4 ✅ |
+| ds2 | 43°C | -0.0042 ❌ | **0.8754** | +0.880 | phase4 ✅ |
+| ds3 | 52°C | 0.8909 | 0.8397 | -0.051 | mentor |
+| ds4 | 62°C | -0.0024 ❌ | **0.7747** | +0.777 | phase4 ✅ |
+| **Mean** | | 0.438 | **0.878** | **+0.441** | **phase4 ✅** |
+
+Mentor completely fails on ds2 and ds4 (R²<0). Phase 4 rescues both. Mean RMSE halved: 0.092 → 0.046.
 
 ---
 
