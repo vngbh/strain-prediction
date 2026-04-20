@@ -1,6 +1,6 @@
 # Project Structure
 
-_Cập nhật: 2026-04-21_
+_Cập nhật: 2026-04-21 — Phase 3 hoàn thành_
 
 ## Tổng quan
 
@@ -22,7 +22,9 @@ Lab/
 │   │
 │   ├── 01_eda.py                ← Phase 1: Exploratory Data Analysis
 │   ├── 02_baseline.py           ← Phase 2: Reproduce ANN gốc của mentor
+│   ├── 03_feature_engineering.py ← Phase 3: Temperature + derived features
 │   │
+│   ├── requirements.txt         ← dependencies
 │   ├── results/                 ← output tự động (không commit)
 │   │   ├── phase1_eda/
 │   │   └── phase2_baseline/
@@ -67,7 +69,7 @@ Columns: `Temperature`, `Strain`, `Electrode1_resistance`, `Electrode2_resistanc
 |-------|------|------------|
 | 1 — EDA | `01_eda.py` | ✅ Done |
 | 2 — Baseline ANN | `02_baseline.py` | ✅ Done |
-| 3 — Feature Engineering | `03_feature_engineering.py` | 🔲 Todo |
+| 3 — Feature Engineering | `03_feature_engineering.py` | ✅ Done |
 | 4 — Deep ANN + Regularization | `04_models/ann_deep.py` | 🔲 Todo |
 | 5 — LSTM / GRU | `04_models/lstm.py` | 🔲 Todo |
 | 6 — CNN-1D | `04_models/cnn1d.py` | 🔲 Todo |

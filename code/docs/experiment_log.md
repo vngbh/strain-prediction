@@ -12,7 +12,7 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 - 5 datasets, tổng ~102k samples, nhiệt độ từ 21°C → 62°C
 - Temperature gần như cố định trong mỗi dataset (dao động < 0.2°C)
 - Strain range tương đồng giữa các dataset: [~0, ~0.5]
-- Electrode resistance thay đổi rõ theo Strain (tương quan cao)
+- Correlation của Electrode resistance với Strain rất thấp khi gộp tất cả datasets (~0.02) — vì mỗi dataset có scale resistance khác nhau → cần normalize per-dataset hoặc thêm derived features
 - **Temperature không được dùng trong model gốc** — đây là điểm cải tiến rõ ràng
 
 **Plots:** `results/phase1_eda/`
@@ -23,20 +23,50 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 **Mục tiêu:** Reproduce model gốc của mentor, lấy metrics làm baseline so sánh.
 
-**Model:** Input(2) → Dense(4, relu) → Dense(1)
-**Config:** Adam(lr=1e-4), MSE loss, 50 epochs, batch=32, train/test=70/30
+**Model:** Input(2) → Dense(4, relu) → Dense(1) — 13 parameters
+**Config:** Adam(lr=1e-4), MSE loss, 50 epochs, batch=32, train/test=70/30, shuffle=False
 
-**Kết quả:** _(chạy `02_baseline.py` để điền số vào đây)_
+**Kết quả:**
 
 | Dataset | Temp | MSE | RMSE | MAE | R² |
 |---------|------|-----|------|-----|----|
-| dataset0 | 21°C | — | — | — | — |
-| dataset1 | 33°C | — | — | — | — |
-| dataset2 | 43°C | — | — | — | — |
-| dataset3 | 52°C | — | — | — | — |
-| dataset4 | 62°C | — | — | — | — |
+| dataset0 | 21°C | 0.000414 | 0.020335 | 0.018999 | **0.9790** |
+| dataset1 | 33°C | 0.014087 | 0.118690 | 0.114418 | **0.2896** |
+| dataset2 | 43°C | 0.008179 | 0.090438 | 0.080330 | **0.6170** |
+| dataset3 | 52°C | 0.001987 | 0.044576 | 0.038948 | **0.9086** |
+| dataset4 | 62°C | 0.004660 | 0.068266 | 0.059562 | **0.7554** |
+
+**Nhận xét:**
+- Kết quả không ổn định giữa các dataset (R² từ 0.29 → 0.98)
+- dataset1 và dataset2 có R² thấp — gợi ý model không generalize tốt theo nhiệt độ
+- Đây là điểm mạnh trong luận văn: chứng minh rõ hạn chế của baseline
 
 **Plots:** `results/phase2_baseline/`
+
+---
+
+## Phase 3 — Feature Engineering (2026-04-21)
+
+**Mục tiêu:** Thêm Temperature và derived features, train cùng kiến trúc để đo tác động thuần túy của features.
+
+**Features thêm vào:**
+- `Temperature` (trực tiếp)
+- `delta_R = Electrode1 - Electrode2`
+- `R_ratio = Electrode1 / Electrode2`
+
+**Kết quả R² theo bộ features:**
+
+| Feature Set | ds0 | ds1 | ds2 | ds3 | ds4 |
+|-------------|-----|-----|-----|-----|-----|
+| baseline (E1+E2) | 0.996 | 0.940 | 0.313 | 0.742 | 0.777 |
+| +Temperature | 0.993 | 0.841 | 0.597 | **0.864** | 0.725 |
+| +delta_R +R_ratio | 0.996 | 0.934 | **0.897** | 0.805 | 0.775 |
+| all features | 0.987 | **0.941** | 0.888 | 0.819 | 0.003 ⚠️ |
+
+**Insight quan trọng:**
+- `delta_R + R_ratio` giúp dataset2 tăng mạnh: 0.31 → **0.90** (loại bỏ temperature offset)
+- "all features" sụp đổ trên dataset4 (R²=0.003) — model Dense(4) quá đơn để xử lý 5 features đồng thời
+- **Kết luận:** Cần nâng cấp kiến trúc (Phase 4+) trước khi thêm nhiều features
 
 ---
 
