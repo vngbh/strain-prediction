@@ -70,4 +70,27 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
+## Phase 4 — Deep ANN (2026-04-21)
+
+**Mục tiêu:** Chứng minh kiến trúc sâu hơn + full features giải quyết được vấn đề của baseline.
+
+**Config:** EarlyStopping(patience=20), ReduceLROnPlateau, batch=64, max 300 epochs
+
+**Kết quả R²:**
+
+| Architecture | ds0 | ds1 | ds2 | ds3 | ds4 | mean |
+|---|---|---|---|---|---|---|
+| mentor baseline | 0.979 | 0.290 | 0.617 | 0.909 | 0.755 | 0.710 |
+| shallow (5 feat) | 0.898 | ❌ | ❌ | ❌ | ❌ | — |
+| **medium (3 layers)** | **0.995** | **0.925** | **0.875** | **0.881** | **0.737** | **0.883** |
+| deep (BN+Dropout) | ❌ | 0.565 | 0.305 | ❌ | 0.069 | — |
+
+**Insight:**
+- Medium model (Dense 64→32→16) là kiến trúc tốt nhất: mean R² **0.883 vs 0.710**
+- Shallow + 5 features = diverge → model quá nhỏ
+- Deep + BN không ổn định trên data này (BatchNorm nhạy cảm)
+- **Milestone:** Lần đầu có model **tốt hơn mentor** một cách ổn định trên hầu hết datasets
+
+---
+
 _Các phase tiếp theo sẽ được thêm vào sau._

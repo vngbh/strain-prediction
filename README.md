@@ -117,6 +117,15 @@ Results are saved to `code/results/`.
 
 `delta_R + R_ratio` fixes dataset2 (0.31→0.90), but "all features" collapses on dataset4 — Dense(4) is too small. Next: upgrade architecture.
 
+### Deep ANN — R² by architecture (all 5 features)
+
+| Architecture | ds0 | ds1 | ds2 | ds3 | ds4 | mean |
+|---|---|---|---|---|---|---|
+| mentor baseline | 0.979 | 0.290 | 0.617 | 0.909 | 0.755 | 0.710 |
+| **medium (64→32→16)** | **0.995** | **0.925** | **0.875** | **0.881** | **0.737** | **0.883** |
+
+**First model consistently better than mentor baseline (mean R² +0.173).**
+
 ---
 
 ## Roadmap
@@ -126,7 +135,7 @@ Results are saved to `code/results/`.
 | 1 | Exploratory Data Analysis | ✅ Done |
 | 2 | Baseline ANN (reproduce mentor model) | ✅ Done |
 | 3 | Feature Engineering (Temperature, ΔR, R_ratio) | ✅ Done |
-| 4 | Deep ANN + Dropout + BatchNorm | 🔲 Todo |
+| 4 | Deep ANN + Dropout + BatchNorm | ✅ Done |
 | 5 | LSTM / GRU (time-series) | 🔲 Todo |
 | 6 | CNN-1D | 🔲 Todo |
 | 7 | CNN + LSTM Hybrid | 🔲 Todo |
