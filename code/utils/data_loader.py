@@ -4,10 +4,11 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
-DATASETS = [0, 1, 2, 3, 4]
+ALL_DATASETS  = [0, 1, 2, 3, 4]
+DATASETS      = [1, 2, 3, 4]        # ds0 excluded — single experiment, likely sample data
 INPUT_FEATURES = ["Electrode1_resistance", "Electrode2_resistance"]
 OUTPUT_FEATURE = "Strain"
-ALL_FEATURES = INPUT_FEATURES + ["Temperature"]
+TEMP_LABEL    = {0: "21°C", 1: "33°C", 2: "43°C", 3: "52°C", 4: "62°C"}
 
 
 def load_dataset(idx: int) -> pd.DataFrame:

@@ -4,6 +4,16 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
+## Quy tắc thí nghiệm (bất biến)
+
+- **Dataset:** chỉ dùng ds1–ds4. ds0 bị loại (1 experiment, likely sample).
+- **Scaler:** fit trên X_train, transform X_test riêng — không leak.
+- **So sánh:** thay đổi 1 yếu tố mỗi lần (feature OR architecture, không cả 2).
+- **Overfitting:** mỗi model phải có plot train vs val loss.
+- **Seed:** cố định SEED=0, báo cáo nếu kết quả nhạy cảm với seed.
+
+---
+
 ## Phase 1 — EDA (2026-04-21)
 
 **Mục tiêu:** Hiểu cấu trúc data, phân phối Strain, ảnh hưởng của Temperature.
@@ -19,7 +29,7 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
-## Phase 2 — Baseline ANN (2026-04-21)
+## Phase 2 — Baseline ANN (2026-04-21) ⚠️ cần re-run không có ds0
 
 **Mục tiêu:** Reproduce model gốc của mentor, lấy metrics làm baseline so sánh.
 
@@ -45,7 +55,7 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
-## Phase 3 — Feature Engineering (2026-04-21)
+## Phase 3 — Feature Engineering (2026-04-21) ⚠️ cần re-run không có ds0
 
 **Mục tiêu:** Thêm Temperature và derived features, train cùng kiến trúc để đo tác động thuần túy của features.
 
@@ -70,7 +80,7 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
-## Phase 4 — Deep ANN (2026-04-21)
+## Phase 4 — Deep ANN (2026-04-21) ⚠️ cần re-run không có ds0 + ablation study
 
 **Mục tiêu:** Chứng minh kiến trúc sâu hơn + full features giải quyết được vấn đề của baseline.
 

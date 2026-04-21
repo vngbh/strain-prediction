@@ -62,4 +62,30 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
+## 5. ML Experiment Integrity
+
+**Results must be reproducible and attributable. No cherry-picking.**
+
+### Dataset
+- **Use only ds1–ds4.** ds0 is excluded (single experiment, likely a sample/demo dataset).
+- Never fit scaler on test data. Fit only on X_train, transform X_test separately.
+- `shuffle=False` is intentional — preserves temporal order and tests cross-experiment generalization.
+
+### Comparisons
+- **Change one thing at a time.** If you change features AND architecture simultaneously, you cannot attribute the improvement to either cause.
+- Every comparison table must specify: feature set, architecture, optimizer, LR, epochs/stopping strategy.
+- When a new model beats the baseline, run an ablation: new-arch + old-features vs old-arch + new-features.
+
+### Overfitting checks
+- Always plot train loss vs val loss for every trained model.
+- Report both training R² and test R². A large gap = overfitting.
+- EarlyStopping does not guarantee no overfitting — it just stops early. Verify with the gap.
+
+### Reporting
+- Never report only the best run. Report mean ± std over at least 3 seeds if results vary.
+- If a model fails on one dataset (R² < 0), report it — don't hide it.
+- State the null hypothesis: "does this change actually help, or is it noise?"
+
+---
+
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

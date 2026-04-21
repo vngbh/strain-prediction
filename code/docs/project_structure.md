@@ -53,15 +53,17 @@ Lab/
 
 ## Dataset
 
-| File | Samples | Nhiệt độ | Experiments |
-|------|---------|----------|-------------|
-| dataset0.csv | 11,776 | ~21°C | [2] |
-| dataset1.csv | 23,053 | ~33°C | [3, 4] |
-| dataset2.csv | 23,227 | ~43°C | [5, 6] |
-| dataset3.csv | 21,497 | ~52°C | [7, 8] |
-| dataset4.csv | 23,077 | ~62°C | [9, 10] |
+| File | Samples | Nhiệt độ | Experiments | Dùng trong eval |
+|------|---------|----------|-------------|-----------------|
+| dataset0.csv | 11,776 | ~21°C | [2] | ❌ excluded — 1 experiment, likely sample data |
+| dataset1.csv | 23,053 | ~33°C | [3, 4] | ✅ |
+| dataset2.csv | 23,227 | ~43°C | [5, 6] | ✅ |
+| dataset3.csv | 21,497 | ~52°C | [7, 8] | ✅ |
+| dataset4.csv | 23,077 | ~62°C | [9, 10] | ✅ |
 
 Columns: `Temperature`, `Strain`, `Electrode1_resistance`, `Electrode2_resistance`, `Experiment`, `Idx`
+
+**shuffle=False** — giữ thứ tự thời gian. Với dataset có 2 experiments: experiment đầu vào train, experiment sau vào test. Đây là cross-experiment generalization test.
 
 ---
 
