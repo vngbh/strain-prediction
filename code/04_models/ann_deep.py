@@ -1,10 +1,8 @@
 """
-Phase 4 — Deep ANN with Dropout + BatchNorm
-Goal: show that upgrading architecture (not just features) is what unlocks
-      consistent performance across all temperatures.
-
-Feature set: E1, E2, Temperature, delta_R, R_ratio (all 5)
-Compare 3 architectures of increasing depth against baseline.
+Phase 4 — Deep ANN Ablation Study (revised)
+2×2 ablation: {mentor features, all features} × {mentor arch, medium arch}
+Each cell = 3 seeds → mean ± std.
+Scaler fit on X_train only. ds1–ds4 only.
 """
 
 import json
@@ -16,181 +14,172 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-from utils.data_loader import load_dataset, DATASETS, INPUT_FEATURES, OUTPUT_FEATURE
-from utils.metrics import evaluate, print_metrics
+from utils.data_loader import load_dataset, DATASETS, INPUT_FEATURES, OUTPUT_FEATURE, TEMP_LABEL
+from utils.metrics import evaluate
 
-SEED = 0
+SEEDS = [0, 42, 123]
 RESULTS_DIR = Path("results/phase4_deep_ann")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-tf.random.set_seed(SEED)
-np.random.seed(SEED)
-
-BASELINE_R2 = {0: 0.9790, 1: 0.2896, 2: 0.6170, 3: 0.9086, 4: 0.7554}
-ALL_FEATURES = INPUT_FEATURES + ["Temperature", "delta_R", "R_ratio"]
-
-
-def add_features(df):
-    df = df.copy()
-    df["delta_R"] = df["Electrode1_resistance"] - df["Electrode2_resistance"]
-    df["R_ratio"] = df["Electrode1_resistance"] / df["Electrode2_resistance"]
-    return df
-
-
-def build_shallow(n_features):
-    """Baseline architecture with all features — same depth as mentor."""
-    return tf.keras.Sequential([
-        tf.keras.Input(shape=(n_features,)),
-        tf.keras.layers.Dense(4, activation="relu"),
-        tf.keras.layers.Dense(1),
-    ], name="shallow")
-
-
-def build_medium(n_features):
-    """Medium depth — 3 hidden layers."""
-    return tf.keras.Sequential([
-        tf.keras.Input(shape=(n_features,)),
-        tf.keras.layers.Dense(64, activation="relu"),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dense(16, activation="relu"),
-        tf.keras.layers.Dense(1),
-    ], name="medium")
-
-
-def build_deep(n_features):
-    """Deep ANN — BN for stability, light Dropout to prevent overfitting."""
-    return tf.keras.Sequential([
-        tf.keras.Input(shape=(n_features,)),
-        tf.keras.layers.Dense(128, activation="relu"),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dropout(0.1),
-        tf.keras.layers.Dense(64, activation="relu"),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dropout(0.1),
-        tf.keras.layers.Dense(32, activation="relu"),
-        tf.keras.layers.Dense(16, activation="relu"),
-        tf.keras.layers.Dense(1),
-    ], name="deep_bn_dropout")
-
-
-ARCHITECTURES = {
-    "shallow (baseline arch)": (build_shallow, 1e-4),
-    "medium (3 layers)":       (build_medium,  1e-3),
-    "deep (BN + Dropout)":     (build_deep,    5e-4),
-}
+MENTOR_FEATURES = INPUT_FEATURES
+ALL_FEATURES    = INPUT_FEATURES + ["Temperature", "delta_R", "R_ratio"]
 
 CALLBACKS = [
     tf.keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True, verbose=0),
     tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=10, verbose=0),
 ]
 
-# Store results AND histories in one pass
-all_results   = {name: {} for name in ARCHITECTURES}
-all_histories = {name: {} for name in ARCHITECTURES}
 
-print("=" * 65)
-print("PHASE 4 — Deep ANN  |  Features: E1, E2, Temp, ΔR, R_ratio")
-print("=" * 65)
+def add_features(df):
+    df = df.copy()
+    df["delta_R"] = df["Electrode1_resistance"] - df["Electrode2_resistance"]
+    df["R_ratio"]  = df["Electrode1_resistance"] / df["Electrode2_resistance"]
+    return df
 
-for dataset_idx in DATASETS:
-    df = add_features(load_dataset(dataset_idx))
-    print(f"\n--- Dataset {dataset_idx} ---")
 
-    scaler = MinMaxScaler()
-    X = scaler.fit_transform(df[ALL_FEATURES].values)
-    y = df[OUTPUT_FEATURE].values
+def build_mentor_arch(n):
+    m = tf.keras.Sequential([
+        tf.keras.Input(shape=(n,)),
+        tf.keras.layers.Dense(4, activation="relu"),
+        tf.keras.layers.Dense(1),
+    ], name="mentor_arch")
+    m.compile(optimizer=keras.optimizers.Adam(1e-4), loss="mse", metrics=["mae"])
+    return m
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=SEED, shuffle=False
-    )
 
-    for arch_name, (build_fn, lr) in ARCHITECTURES.items():
-        tf.random.set_seed(SEED)
-        model = build_fn(len(ALL_FEATURES))
-        model.compile(optimizer=keras.optimizers.Adam(lr), loss="mse", metrics=["mae"])
+def build_medium_arch(n):
+    m = tf.keras.Sequential([
+        tf.keras.Input(shape=(n,)),
+        tf.keras.layers.Dense(64, activation="relu"),
+        tf.keras.layers.Dense(32, activation="relu"),
+        tf.keras.layers.Dense(16, activation="relu"),
+        tf.keras.layers.Dense(1),
+    ], name="medium_arch")
+    m.compile(optimizer=keras.optimizers.Adam(1e-3), loss="mse", metrics=["mae"])
+    return m
 
-        history = model.fit(
-            X_train, y_train,
-            epochs=300,
-            batch_size=64,
-            validation_split=0.2,
-            callbacks=CALLBACKS,
-            verbose=0,
-        )
 
-        y_pred = model.predict(X_test, verbose=0).flatten()
-        metrics = evaluate(y_test, y_pred)
-        metrics["epochs_trained"] = len(history.history["loss"])
-        all_results[arch_name][f"dataset{dataset_idx}"]   = metrics
-        all_histories[arch_name][f"dataset{dataset_idx}"] = history.history
+# 2×2 ablation cells
+CELLS = {
+    "A: mentor-arch + mentor-feat": (build_mentor_arch, MENTOR_FEATURES, 50,  False),
+    "B: mentor-arch + all-feat":    (build_mentor_arch, ALL_FEATURES,    50,  False),
+    "C: medium-arch + mentor-feat": (build_medium_arch, MENTOR_FEATURES, 300, True),
+    "D: medium-arch + all-feat":    (build_medium_arch, ALL_FEATURES,    300, True),
+}
 
-        delta = metrics["r2"] - BASELINE_R2[dataset_idx]
-        sign = "+" if delta >= 0 else ""
-        print(f"  [{arch_name:<30}] R²={metrics['r2']:.4f}  ({sign}{delta:.4f})  "
-              f"epochs={metrics['epochs_trained']}")
+all_runs     = {cell: {i: [] for i in DATASETS} for cell in CELLS}
+all_histories= {cell: {i: [] for i in DATASETS} for cell in CELLS}
+
+print("=" * 70)
+print("PHASE 4 — 2×2 Ablation | ds1–ds4 | 3 seeds")
+print("Rows: architecture  |  Columns: features")
+print("=" * 70)
+
+for seed in SEEDS:
+    for i in DATASETS:
+        df = add_features(load_dataset(i))
+        y  = df[OUTPUT_FEATURE].values
+
+        for cell_name, (build_fn, features, epochs, use_cb) in CELLS.items():
+            X = df[features].values
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.3, random_state=seed, shuffle=False)
+
+            scaler = MinMaxScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test  = scaler.transform(X_test)
+
+            tf.random.set_seed(seed)
+            model = build_fn(len(features))
+            callbacks = CALLBACKS if use_cb else []
+            history = model.fit(
+                X_train, y_train, epochs=epochs, batch_size=32,
+                validation_split=0.2, callbacks=callbacks, verbose=0)
+
+            y_pred = model.predict(X_test, verbose=0).flatten()
+            m = evaluate(y_test, y_pred)
+            m["seed"] = seed
+            m["train_loss_final"] = float(history.history["loss"][-1])
+            m["val_loss_final"]   = float(history.history["val_loss"][-1])
+            all_runs[cell_name][i].append(m)
+            if seed == 0:
+                all_histories[cell_name][i] = history.history
 
 # ── Summary table ─────────────────────────────────────────────────────────────
 
-print("\n" + "=" * 65)
-print("R² SUMMARY")
-print("=" * 65)
-print(f"{'Architecture':<32}" + "".join(f"  ds{i}" for i in DATASETS) + "  mean")
-print("-" * 65)
+print(f"\n{'Cell':<36}" + "".join(f"  ds{i}" for i in DATASETS) + "   mean")
+print("-" * 70)
 
-base_vals = list(BASELINE_R2.values())
-print(f"{'mentor baseline':<32}" +
-      "".join(f"  {v:.3f}" for v in base_vals) +
-      f"  {np.mean(base_vals):.3f}")
+summary = {}
+for cell_name, ds_runs in all_runs.items():
+    row = f"{cell_name:<36}"
+    means, per_ds = [], {}
+    for i in DATASETS:
+        r2s = [r["r2"] for r in ds_runs[i]]
+        m, s = np.mean(r2s), np.std(r2s)
+        per_ds[i] = {"r2_mean": round(m, 4), "r2_std": round(s, 4)}
+        means.append(m)
+        row += f"  {m:.3f}"
+    row += f"   {np.mean(means):.3f}"
+    print(row)
+    summary[cell_name] = {"per_dataset": per_ds, "overall_mean": round(np.mean(means), 4)}
 
-for arch_name, results in all_results.items():
-    vals = [results[f"dataset{i}"]["r2"] for i in DATASETS]
-    print(f"{arch_name:<32}" +
-          "".join(f"  {v:.3f}" for v in vals) +
-          f"  {np.mean(vals):.3f}")
+# ── Overfitting check ─────────────────────────────────────────────────────────
 
-# ── Loss curves (from saved histories) ───────────────────────────────────────
+print(f"\n{'Cell':<36}  train_loss   val_loss   gap   overfit?")
+print("-" * 75)
+for cell_name, ds_runs in all_runs.items():
+    train_l = np.mean([ds_runs[i][0]["train_loss_final"] for i in DATASETS])
+    val_l   = np.mean([ds_runs[i][0]["val_loss_final"]   for i in DATASETS])
+    gap = (val_l - train_l) / (train_l + 1e-9)
+    flag = "⚠️ yes" if gap > 0.3 else "ok"
+    print(f"{cell_name:<36}  {train_l:.6f}   {val_l:.6f}  {gap:+.2f}  {flag}")
 
-fig, axes = plt.subplots(len(ARCHITECTURES), len(DATASETS),
-                          figsize=(22, 4 * len(ARCHITECTURES)))
-for i, arch_name in enumerate(ARCHITECTURES):
-    for j, dataset_idx in enumerate(DATASETS):
-        h   = all_histories[arch_name][f"dataset{dataset_idx}"]
-        r2  = all_results[arch_name][f"dataset{dataset_idx}"]["r2"]
-        ax  = axes[i, j]
-        ax.plot(h["loss"],     label="Train", lw=0.8)
-        ax.plot(h["val_loss"], label="Val",   lw=0.8)
-        ax.set_title(f"{arch_name}\nds{dataset_idx} | R²={r2:.3f}", fontsize=8)
-        ax.legend(fontsize=7)
+# ── Loss curves (seed=0) ──────────────────────────────────────────────────────
+
+fig, axes = plt.subplots(len(CELLS), len(DATASETS),
+                          figsize=(18, 3.5 * len(CELLS)))
+for row_idx, cell_name in enumerate(CELLS):
+    for col_idx, i in enumerate(DATASETS):
+        h  = all_histories[cell_name][i]
+        r2 = all_runs[cell_name][i][0]["r2"]
+        ax = axes[row_idx, col_idx]
+        ax.plot(h["loss"],     lw=0.8, label="Train")
+        ax.plot(h["val_loss"], lw=0.8, label="Val")
+        ax.set_title(f"{cell_name[:20]}\nds{i} R²={r2:.3f}", fontsize=7)
+        ax.legend(fontsize=6)
         ax.set_xlabel("Epoch", fontsize=7)
 
-fig.suptitle("Phase 4 — Loss Curves", fontsize=12)
+fig.suptitle("Phase 4 Ablation — Train vs Val Loss (seed=0)", fontsize=11)
 fig.tight_layout()
 fig.savefig(RESULTS_DIR / "loss_curves.png", dpi=150)
 plt.close(fig)
 
-# ── Bar chart ─────────────────────────────────────────────────────────────────
+# ── Ablation bar chart ────────────────────────────────────────────────────────
 
-fig, ax = plt.subplots(figsize=(12, 5))
-x = np.arange(len(DATASETS))
-width = 0.18
+fig, axes = plt.subplots(1, len(DATASETS), figsize=(18, 5), sharey=True)
+x = np.arange(len(CELLS))
+labels = [c.split(":")[0] for c in CELLS]
 
-ax.bar(x - width, base_vals, width, label="mentor baseline", alpha=0.85)
-for k, (arch_name, results) in enumerate(all_results.items()):
-    vals = [results[f"dataset{i}"]["r2"] for i in DATASETS]
-    ax.bar(x + (k * width), vals, width, label=arch_name, alpha=0.85)
+for j, i in enumerate(DATASETS):
+    ax = axes[j]
+    means = [np.mean([r["r2"] for r in all_runs[c][i]]) for c in CELLS]
+    stds  = [np.std ([r["r2"] for r in all_runs[c][i]]) for c in CELLS]
+    colors = ["C0", "C1", "C2", "C3"]
+    ax.bar(x, means, yerr=stds, capsize=4, color=colors, alpha=0.85)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_title(f"ds{i} ({TEMP_LABEL[i]})", fontsize=9)
+    ax.set_ylim(-0.1, 1.05)
+    ax.set_ylabel("R²")
+    ax.axhline(0, color="black", lw=0.5, linestyle="--")
 
-ax.set_xticks(x)
-ax.set_xticklabels([f"ds{i}" for i in DATASETS])
-ax.set_ylabel("R²")
-ax.set_ylim(0, 1.05)
-ax.axhline(0.95, color="green", linestyle="--", lw=1, alpha=0.5, label="R²=0.95 target")
-ax.set_title("Phase 4 — R² by Architecture")
-ax.legend(fontsize=8)
+fig.suptitle("Phase 4 — 2×2 Ablation R² (mean±std, 3 seeds)", fontsize=11)
 fig.tight_layout()
-fig.savefig(RESULTS_DIR / "r2_comparison.png", dpi=150)
+fig.savefig(RESULTS_DIR / "ablation_r2.png", dpi=150)
 plt.close(fig)
 
-with open(RESULTS_DIR / "deep_ann_metrics.json", "w") as f:
-    json.dump(all_results, f, indent=2)
+with open(RESULTS_DIR / "ablation_metrics.json", "w") as f:
+    json.dump(summary, f, indent=2)
 
-print(f"\n[Phase 4 complete] Results saved to {RESULTS_DIR}")
+print(f"\n[Phase 4 complete] → {RESULTS_DIR}")

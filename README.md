@@ -94,48 +94,38 @@ Results are saved to `code/results/`.
 
 ## Results
 
-### Baseline ANN — R² per dataset
+_Evaluated on ds1–ds4 only. 3 random seeds, scaler fit on train only, each change isolated._
 
-| Dataset | Temp | R² |
-|---------|------|----|
-| dataset0 | 21°C | 0.9790 |
-| dataset1 | 33°C | 0.2896 |
-| dataset2 | 43°C | 0.6170 |
-| dataset3 | 52°C | 0.9086 |
-| dataset4 | 62°C | 0.7554 |
+### Phase 2 — Baseline (mean R² ± std, 3 seeds)
 
-**Key finding:** Baseline is highly inconsistent across temperatures — motivates the research.
+| Dataset | Temp | R² mean | ±std |
+|---------|------|---------|------|
+| ds1 | 33°C | 0.628 | ±0.445 |
+| ds2 | 43°C | 0.342 | ±0.391 |
+| ds3 | 52°C | 0.856 | ±0.030 |
+| ds4 | 62°C | 0.720 | ±0.060 |
+| **Mean** | | **0.637** | |
 
-### Feature Engineering — R² by feature set
+High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 
-| Feature Set | ds0 (21°C) | ds1 (33°C) | ds2 (43°C) | ds3 (52°C) | ds4 (62°C) |
-|-------------|-----------|-----------|-----------|-----------|-----------|
-| baseline (E1+E2) | 0.996 | 0.940 | 0.313 | 0.742 | 0.777 |
-| +Temperature | 0.993 | 0.841 | 0.597 | **0.864** | 0.725 |
-| +delta_R +R_ratio | 0.996 | 0.934 | **0.897** | 0.805 | 0.775 |
-| all features | 0.987 | **0.941** | 0.888 | 0.819 | 0.003 ⚠️ |
+### Phase 3 — Feature effect (mentor arch fixed, 3 seeds)
 
-`delta_R + R_ratio` fixes dataset2 (0.31→0.90), but "all features" collapses on dataset4 — Dense(4) is too small. Next: upgrade architecture.
+| Feature Set | ds1 | ds2 | ds3 | ds4 | mean |
+|-------------|-----|-----|-----|-----|------|
+| baseline (E1+E2) | 0.707 | 0.483 | 0.893 | 0.641 | 0.681 |
+| **+delta_R +R_ratio** | **0.900** | **0.808** | 0.762 | 0.716 | **0.797** |
+| all 5 features | 0.714 | 0.692 | 0.656 | 0.743 | 0.701 |
 
-### Deep ANN — R² by architecture (all 5 features)
+### Phase 4 — Architecture effect (2×2 ablation, 3 seeds)
 
-| Architecture | ds0 | ds1 | ds2 | ds3 | ds4 | mean |
-|---|---|---|---|---|---|---|
-| mentor baseline | 0.979 | 0.290 | 0.617 | 0.909 | 0.755 | 0.710 |
-| **medium (64→32→16)** | **0.995** | **0.925** | **0.875** | **0.881** | **0.737** | **0.883** |
+| Cell | Architecture | Features | mean R² |
+|------|-------------|---------|---------|
+| A (baseline) | Dense(4) | E1, E2 | 0.541 |
+| B | Dense(4) | all 5 | 0.685 — feature effect: +0.144 |
+| **C (best)** | **Dense(64→32→16)** | **E1, E2** | **0.846** — arch effect: +0.305 |
+| D | Dense(64→32→16) | all 5 | 0.772 |
 
-**Fair comparison (same split, same data):**
-
-| Dataset | Temp | Mentor R² | Phase4 R² | Δ R² | Winner |
-|---------|------|-----------|-----------|------|--------|
-| ds0 | 21°C | 0.9940 | 0.9906 | -0.003 | mentor |
-| ds1 | 33°C | 0.3094 | **0.9111** | +0.602 | phase4 ✅ |
-| ds2 | 43°C | -0.0042 ❌ | **0.8754** | +0.880 | phase4 ✅ |
-| ds3 | 52°C | 0.8909 | 0.8397 | -0.051 | mentor |
-| ds4 | 62°C | -0.0024 ❌ | **0.7747** | +0.777 | phase4 ✅ |
-| **Mean** | | 0.438 | **0.878** | **+0.441** | **phase4 ✅** |
-
-Mentor completely fails on ds2 and ds4 (R²<0). Phase 4 rescues both. Mean RMSE halved: 0.092 → 0.046.
+**Architecture is the main driver (+0.305 vs +0.144 for features).**
 
 ---
 

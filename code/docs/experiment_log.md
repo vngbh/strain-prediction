@@ -29,77 +29,69 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
-## Phase 2 — Baseline ANN (2026-04-21) ⚠️ cần re-run không có ds0
+## Phase 2 — Baseline ANN (2026-04-21, revised)
 
 **Mục tiêu:** Reproduce model gốc của mentor, lấy metrics làm baseline so sánh.
 
-**Model:** Input(2) → Dense(4, relu) → Dense(1) — 13 parameters
-**Config:** Adam(lr=1e-4), MSE loss, 50 epochs, batch=32, train/test=70/30, shuffle=False
+**Model:** Input(2) → Dense(4, relu) → Dense(1) | Adam(lr=1e-4), 50 epochs, batch=32
+**Data:** ds1–ds4, shuffle=False, scaler fit on X_train only, 3 seeds (0/42/123)
 
-**Kết quả:**
-
-| Dataset | Temp | MSE | RMSE | MAE | R² |
-|---------|------|-----|------|-----|----|
-| dataset0 | 21°C | 0.000414 | 0.020335 | 0.018999 | **0.9790** |
-| dataset1 | 33°C | 0.014087 | 0.118690 | 0.114418 | **0.2896** |
-| dataset2 | 43°C | 0.008179 | 0.090438 | 0.080330 | **0.6170** |
-| dataset3 | 52°C | 0.001987 | 0.044576 | 0.038948 | **0.9086** |
-| dataset4 | 62°C | 0.004660 | 0.068266 | 0.059562 | **0.7554** |
+| Dataset | Temp | R² mean | ±std | RMSE mean | Overfit? |
+|---------|------|---------|------|-----------|----------|
+| ds1 | 33°C | 0.628 | 0.445 | 0.069 | no |
+| ds2 | 43°C | 0.342 | 0.391 | 0.110 | no |
+| ds3 | 52°C | 0.856 | 0.030 | 0.056 | ⚠️ yes |
+| ds4 | 62°C | 0.720 | 0.060 | 0.073 | ⚠️ yes |
+| **Mean** | | **0.637** | | | |
 
 **Nhận xét:**
-- Kết quả không ổn định giữa các dataset (R² từ 0.29 → 0.98)
-- dataset1 và dataset2 có R² thấp — gợi ý model không generalize tốt theo nhiệt độ
-- Đây là điểm mạnh trong luận văn: chứng minh rõ hạn chế của baseline
+- R² không ổn định, std cao trên ds1–ds2 (±0.4!) → model nhạy với seed
+- ds3, ds4 có overfitting nhẹ (val > train loss)
+- Đây là baseline tham chiếu cho mọi so sánh tiếp theo
 
 **Plots:** `results/phase2_baseline/`
 
 ---
 
-## Phase 3 — Feature Engineering (2026-04-21) ⚠️ cần re-run không có ds0
+## Phase 3 — Feature Engineering (2026-04-21, revised)
 
-**Mục tiêu:** Thêm Temperature và derived features, train cùng kiến trúc để đo tác động thuần túy của features.
+**Mục tiêu:** Đo tác động features **thuần túy** — cùng kiến trúc mentor, chỉ đổi features.
+**Data:** ds1–ds4, 3 seeds, scaler fit on X_train only.
 
-**Features thêm vào:**
-- `Temperature` (trực tiếp)
-- `delta_R = Electrode1 - Electrode2`
-- `R_ratio = Electrode1 / Electrode2`
+| Feature Set | ds1 (±std) | ds2 (±std) | ds3 (±std) | ds4 (±std) | mean |
+|-------------|-----------|-----------|-----------|-----------|------|
+| baseline (E1+E2) | 0.707±0.16 | 0.483±0.28 | 0.893±0.03 | 0.641±0.13 | 0.681 |
+| +Temperature | 0.817±0.05 | 0.397±0.48 | 0.897±0.04 | 0.697±0.04 | 0.702 |
+| **+delta_R +R_ratio** | **0.900±0.05** | **0.808±0.09** | 0.762±0.07 | 0.716±0.03 | **0.797** |
+| all 5 features | 0.714±0.22 | 0.692±0.14 | 0.656±0.02 | 0.743±0.02 | 0.701 |
 
-**Kết quả R² theo bộ features:**
-
-| Feature Set | ds0 | ds1 | ds2 | ds3 | ds4 |
-|-------------|-----|-----|-----|-----|-----|
-| baseline (E1+E2) | 0.996 | 0.940 | 0.313 | 0.742 | 0.777 |
-| +Temperature | 0.993 | 0.841 | 0.597 | **0.864** | 0.725 |
-| +delta_R +R_ratio | 0.996 | 0.934 | **0.897** | 0.805 | 0.775 |
-| all features | 0.987 | **0.941** | 0.888 | 0.819 | 0.003 ⚠️ |
-
-**Insight quan trọng:**
-- `delta_R + R_ratio` giúp dataset2 tăng mạnh: 0.31 → **0.90** (loại bỏ temperature offset)
-- "all features" sụp đổ trên dataset4 (R²=0.003) — model Dense(4) quá đơn để xử lý 5 features đồng thời
-- **Kết luận:** Cần nâng cấp kiến trúc (Phase 4+) trước khi thêm nhiều features
+**Insight:**
+- `+delta_R +R_ratio` là feature set tốt nhất với mentor arch (mean 0.797)
+- `+Temperature` không giúp nhiều — nhiệt độ cố định trong mỗi dataset nên không có thông tin mới
+- `all 5 features` không tốt hơn `+delta_R +R_ratio` — Dense(4) không đủ capacity
+- std cao trên ds2 (±0.28–0.48) → model vẫn nhạy với seed khi dùng mentor arch
 
 ---
 
-## Phase 4 — Deep ANN (2026-04-21) ⚠️ cần re-run không có ds0 + ablation study
+## Phase 4 — Deep ANN Ablation (2026-04-21, revised)
 
-**Mục tiêu:** Chứng minh kiến trúc sâu hơn + full features giải quyết được vấn đề của baseline.
+**Thiết kế:** 2×2 ablation — đổi từng yếu tố riêng biệt.
+**Data:** ds1–ds4, 3 seeds, scaler fit on X_train only.
 
-**Config:** EarlyStopping(patience=20), ReduceLROnPlateau, batch=64, max 300 epochs
+| Cell | Architecture | Features | ds1 | ds2 | ds3 | ds4 | mean |
+|------|-------------|---------|-----|-----|-----|-----|------|
+| A | mentor (Dense 4) | E1, E2 | 0.879 | 0.111 | 0.580 | 0.593 | 0.541 |
+| B | mentor (Dense 4) | all 5 | 0.724 | 0.554 | 0.723 | 0.737 | 0.685 |
+| **C** | **medium (64→32→16)** | **E1, E2** | **0.908** | **0.835** | **0.910** | **0.731** | **0.846** |
+| D | medium (64→32→16) | all 5 | 0.825 | 0.827 | 0.832 | 0.602 | 0.772 |
 
-**Kết quả R²:**
+**Phân tích attribution:**
+- Feature effect (A→B): +0.144
+- **Architecture effect (A→C): +0.305** ← yếu tố chính
+- C (medium + E1,E2) tốt hơn D (medium + all 5): thêm features không giúp thêm khi arch đã đủ mạnh
+- **Best: Cell C**, mean R² **0.846 vs baseline 0.637**
 
-| Architecture | ds0 | ds1 | ds2 | ds3 | ds4 | mean |
-|---|---|---|---|---|---|---|
-| mentor baseline | 0.979 | 0.290 | 0.617 | 0.909 | 0.755 | 0.710 |
-| shallow (5 feat) | 0.898 | ❌ | ❌ | ❌ | ❌ | — |
-| **medium (3 layers)** | **0.995** | **0.925** | **0.875** | **0.881** | **0.737** | **0.883** |
-| deep (BN+Dropout) | ❌ | 0.565 | 0.305 | ❌ | 0.069 | — |
-
-**Insight:**
-- Medium model (Dense 64→32→16) là kiến trúc tốt nhất: mean R² **0.883 vs 0.710**
-- Shallow + 5 features = diverge → model quá nhỏ
-- Deep + BN không ổn định trên data này (BatchNorm nhạy cảm)
-- **Milestone:** Lần đầu có model **tốt hơn mentor** một cách ổn định trên hầu hết datasets
+**Overfitting:** val_loss > train_loss ở tất cả cells — cần regularization ở phase sau.
 
 ---
 
