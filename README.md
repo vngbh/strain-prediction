@@ -139,6 +139,21 @@ High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 
 **Best model overall: ANN P4 Cell C (mean R²=0.846).** LSTM P5 wins on ds1/ds2 (higher temperatures with complex patterns). Hybrid did not outperform standalone models.
 
+### Phase 8 — Cross-temperature Generalization
+
+**Key finding: both models fail completely on unseen temperatures (R² < 0).**
+
+| Test DS | ANN R² (cross) | LSTM R² (cross) | Within-dataset ANN |
+|---------|---------------|-----------------|-------------------|
+| ds1 (33°C) | -14.38 | -40.33 | 0.908 |
+| ds2 (43°C) | -0.72 | -0.54 | 0.835 |
+| ds3 (52°C) | 0.013 | 0.010 | 0.910 |
+| ds4 (62°C) | -2.12 | -8.01 | 0.731 |
+
+Extrapolation (train 33–52°C → test 62°C): ANN R²=0.05, LSTM R²=-7.25 — both **❌ fail**.
+
+Thermal drift between temperatures creates entirely different resistance scales. MinMaxScaler trained on other temperatures cannot normalize unseen ones. This confirms that per-temperature calibration or domain adaptation is required for deployment.
+
 ---
 
 ## Roadmap
@@ -152,7 +167,7 @@ High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 | 5 | LSTM (time-series, window=20) | ✅ Done |
 | 6 | CNN-1D | ✅ Done |
 | 7 | CNN+LSTM Hybrid | ✅ Done |
-| 8 | Cross-temperature Generalization | 🔲 Todo |
+| 8 | Cross-temperature Generalization | ✅ Done |
 | 9 | Hyperparameter Tuning (Optuna) | 🔲 Todo |
 
 ---

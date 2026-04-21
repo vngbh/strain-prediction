@@ -191,4 +191,53 @@ CNN-1D sẽ được dùng làm feature extractor trong hybrid model (Phase 7).
 
 ---
 
-_Phase 8 (Cross-temperature generalization) và Phase 9 (Hyperparameter tuning) tiếp theo._
+---
+
+## Phase 8 — Cross-temperature Generalization (2026-04-21)
+
+**Mục tiêu:** Kiểm tra xem model có thể dự đoán strain ở nhiệt độ **chưa thấy trong training** không.
+
+**Thiết kế:**
+- Setup 1: Leave-One-Out — train trên 3 datasets, test trên 1 dataset còn lại (4 combinations)
+- Setup 2: Extrapolation — train ds1+ds2+ds3 (33–52°C), test ds4 (62°C) — kịch bản khó nhất
+
+**Models:** ANN P4 Cell C vs LSTM P5, 3 seeds, scaler fit trên train chỉ.
+
+### Setup 1 — Leave-One-Out R²
+
+| Test DS | Train on | ANN R² ±std | LSTM R² ±std | Winner |
+|---------|----------|-------------|--------------|--------|
+| ds1 (33°C) | ds2+ds3+ds4 | -14.376 ±10.711 | -40.335 ±29.135 | ANN (ít tệ hơn) |
+| ds2 (43°C) | ds1+ds3+ds4 | -0.719 ±0.356 | -0.542 ±0.601 | LSTM (ít tệ hơn) |
+| ds3 (52°C) | ds1+ds2+ds4 | 0.013 ±0.018 | 0.010 ±0.011 | tie |
+| ds4 (62°C) | ds1+ds2+ds3 | -2.120 ±1.194 | -8.008 ±2.898 | ANN (ít tệ hơn) |
+
+### Setup 2 — Extrapolation (train 33–52°C → test 62°C)
+
+| Model | R² mean | ±std | min | max | Verdict |
+|-------|---------|------|-----|-----|---------|
+| ANN | 0.050 | 0.044 | -0.012 | 0.082 | ❌ fails |
+| LSTM | -7.251 | 7.335 | -17.363 | -0.191 | ❌ fails |
+
+### Generalization Gap (Within vs Cross)
+
+| Dataset | ANN within | ANN cross | gap | LSTM within | LSTM cross | gap |
+|---------|-----------|-----------|-----|-------------|------------|-----|
+| ds1 (33°C) | 0.908 | -14.376 | +15.28 | 0.937 | -40.335 | +41.27 |
+| ds2 (43°C) | 0.835 | -0.719 | +1.55 | 0.859 | -0.542 | +1.40 |
+| ds3 (52°C) | 0.910 | 0.013 | +0.90 | 0.843 | 0.010 | +0.83 |
+| ds4 (62°C) | 0.731 | -2.120 | +2.85 | 0.663 | -8.008 | +8.67 |
+
+**Kết luận:**
+- Cả ANN và LSTM đều **không thể generalize** qua nhiệt độ chưa thấy — R² âm nghĩa là model tệ hơn dự đoán trung bình
+- Thermal drift giữa các nhiệt độ quá lớn: resistance scale hoàn toàn khác nhau → MinMaxScaler fit trên train không đủ để normalize
+- Generalization gap khổng lồ: ds1 ANN gap=+15.28, ds1 LSTM gap=+41.27
+- ds3 (52°C) là dataset dễ nhất để generalize (R²≈0.01), nhưng vẫn gần như random
+- Đây là **kết quả khoa học quan trọng**: xác nhận rằng temperature-dependent sensor drift là thách thức cốt lõi cần domain adaptation hoặc per-temperature calibration
+- **Hướng future work:** temperature-conditioned model, domain adaptation (DANN), fine-tuning với vài điểm calibration
+
+**Plots:** `results/phase8_cross_temp/cross_temp_results.png`
+
+---
+
+_Phase 9 (Hyperparameter Tuning với Optuna) tiếp theo._
