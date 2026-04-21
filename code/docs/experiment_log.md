@@ -240,4 +240,73 @@ CNN-1D sẽ được dùng làm feature extractor trong hybrid model (Phase 7).
 
 ---
 
-_Phase 9 (Hyperparameter Tuning với Optuna) tiếp theo._
+---
+
+## Phase 9 — Hyperparameter Tuning with Optuna (2026-04-21)
+
+**Mục tiêu:** Upgrade Phase 4 ANN Cell C bằng cách để Optuna tự tìm hyperparameters tối ưu thay vì chọn tay.
+
+**Search space:** n_layers (1–4), units (16/32/64/128), dropout (0–0.4), lr (1e-4 → 1e-2), batch size (32/64/128). 50 trials/dataset, search trên seed=0, final eval 3 seeds.
+
+### Kết quả
+
+| Dataset | ANN P4 | P9 Optuna | ±std | Delta |
+|---------|--------|-----------|------|-------|
+| ds1 (33°C) | 0.908 | 0.791 | 0.036 | -0.117 ⚠️ |
+| ds2 (43°C) | 0.835 | 0.897 | 0.035 | +0.062 ✅ |
+| ds3 (52°C) | 0.910 | 0.932 | 0.005 | +0.022 ✅ |
+| ds4 (62°C) | 0.731 | 0.779 | 0.006 | +0.048 ✅ |
+| **Mean** | **0.846** | **0.850** | | **+0.004** |
+
+### Best params tìm được
+
+| Dataset | Architecture | LR | Dropout | Batch |
+|---------|-------------|-----|---------|-------|
+| ds1 | Dense(128) | 0.0022 | 0.30 | 128 |
+| ds2 | Dense(64→128→16) | 0.0030 | 0.0 | 128 |
+| ds3 | Dense(64→32→16→32) | 0.0012 | 0.0 | 64 |
+| ds4 | Dense(128) | 0.0033 | 0.0 | 32 |
+
+### Phân tích
+
+- **ds1 giảm (-0.117):** Optuna tìm được config tốt cho seed=0 (R²=0.933) nhưng unstable với 3 seeds (std=0.036) → **search overfitting**: thuật toán overfit vào 1 seed, không generalizable
+- **ds2/ds3/ds4 cải thiện:** Optuna tìm được configs ổn định hơn, đặc biệt ds3 đạt 0.932 (cao nhất trong tất cả phases)
+- **Mean chỉ tăng +0.004:** Xác nhận rằng Phase 4 đã chọn hyperparameters khá tốt bằng tay
+
+### Kết luận
+
+> Hyperparameter tuning không phải lúc nào cũng giúp nhiều. Kết quả này xác nhận rằng **ANN P4 Cell C với hyperparameters chọn tay là competitive** — kiến trúc 64→32→16 gần với tối ưu trên hầu hết datasets. Optuna hữu ích nhất ở ds2/ds4 (datasets khó), nhưng có thể gây instability nếu search budget nhỏ.
+
+**Plots:** `results/phase9_optuna/optuna_vs_p4.png`
+
+---
+
+## Tổng kết cuối cùng — Tất cả phases
+
+### Best model per dataset (across all phases)
+
+| Dataset | Best Model | R² |
+|---------|-----------|-----|
+| ds1 (33°C) | LSTM P5 | **0.937** |
+| ds2 (43°C) | P9 Optuna | **0.897** |
+| ds3 (52°C) | P9 Optuna | **0.932** |
+| ds4 (62°C) | P9 Optuna | **0.779** |
+
+### Ranking by mean R²
+
+| Rank | Model | Mean R² | vs Mentor |
+|------|-------|---------|----------|
+| 1 | P9 Optuna | **0.850** | +0.213 |
+| 2 | ANN P4 (Cell C) | 0.846 | +0.209 |
+| 3 | LSTM P5 | 0.826 | +0.189 |
+| 4 | Hybrid P7 | 0.803 | +0.166 |
+| 5 | CNN-1D P6 | 0.792 | +0.155 |
+| — | Mentor baseline | 0.637 | — |
+
+### Kết luận nghiên cứu
+
+1. **Architecture là yếu tố chính** (Phase 4): Dense(64→32→16) tốt hơn Dense(4) là +0.305 R², vượt xa feature engineering (+0.144)
+2. **LSTM fix được instability** (Phase 5): ds2 std giảm từ 0.261 → 0.038, nhưng không beat ANN overall
+3. **Complexity không đảm bảo accuracy** (Phase 7): Hybrid CNN+LSTM tệ hơn standalone models
+4. **Cross-temperature là thách thức cốt lõi** (Phase 8): cả hai model fail hoàn toàn (R² âm) → thermal drift là bottleneck thực sự
+5. **Hyperparameter tuning cải thiện nhỏ** (Phase 9): +0.004 mean R² — xác nhận Phase 4 đã gần tối ưu

@@ -132,12 +132,13 @@ High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 | Model | ds1 | ds2 | ds3 | ds4 | Mean |
 |-------|-----|-----|-----|-----|------|
 | Mentor baseline | 0.628 | 0.342 | 0.856 | 0.720 | 0.637 |
-| ANN P4 (Cell C) | 0.908 | 0.835 | **0.910** | **0.731** | **0.846** |
-| LSTM P5 | **0.937** | **0.859** | 0.843 | 0.663 | 0.826 |
+| ANN P4 (Cell C) | 0.908 | 0.835 | 0.910 | 0.731 | 0.846 |
+| LSTM P5 | **0.937** | 0.859 | 0.843 | 0.663 | 0.826 |
 | CNN-1D P6 | 0.900 | 0.782 | 0.838 | 0.647 | 0.792 |
 | CNN+LSTM P7 | 0.897 | 0.856 | 0.885 | 0.575 | 0.803 |
+| **P9 Optuna** | 0.791 | **0.897** | **0.932** | **0.779** | **0.850** |
 
-**Best model overall: ANN P4 Cell C (mean R²=0.846).** LSTM P5 wins on ds1/ds2 (higher temperatures with complex patterns). Hybrid did not outperform standalone models.
+**Best model overall: P9 Optuna (mean R²=0.850).** ANN P4 Cell C is close (0.846) and more stable on ds1. LSTM P5 wins on ds1 specifically. Hyperparameter tuning added only +0.004 mean R², confirming Phase 4 architecture was already near-optimal.
 
 ### Phase 8 — Cross-temperature Generalization
 
@@ -168,7 +169,7 @@ Thermal drift between temperatures creates entirely different resistance scales.
 | 6 | CNN-1D | ✅ Done |
 | 7 | CNN+LSTM Hybrid | ✅ Done |
 | 8 | Cross-temperature Generalization | ✅ Done |
-| 9 | Hyperparameter Tuning (Optuna) | 🔲 Todo |
+| 9 | Hyperparameter Tuning (Optuna) | ✅ Done |
 
 ---
 
