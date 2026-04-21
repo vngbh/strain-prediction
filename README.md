@@ -138,7 +138,7 @@ High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 | 3 | Feature Engineering (Temperature, ΔR, R_ratio) | ✅ Done |
 | 4 | Deep ANN + Dropout + BatchNorm | ✅ Done |
 | 5 | LSTM (time-series, window=20) | ✅ Done |
-| 6 | CNN-1D | 🔲 Todo |
+| 6 | CNN-1D | ✅ Done |
 | 7 | CNN + LSTM Hybrid | 🔲 Todo |
 | 8 | Cross-temperature Generalization | 🔲 Todo |
 | 9 | Hyperparameter Tuning (Optuna) | 🔲 Todo |

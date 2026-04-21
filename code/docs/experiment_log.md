@@ -119,4 +119,20 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
+## Phase 6 — CNN-1D (2026-04-21)
+
+| Dataset | ANN | LSTM | CNN-1D | Best |
+|---------|-----|------|--------|------|
+| ds1 | 0.908 | **0.937** | 0.900 ±0.021 | LSTM |
+| ds2 | 0.835 | **0.859** | 0.782 ±0.119 | LSTM |
+| ds3 | **0.910** | 0.843 | 0.838 ±0.004 | ANN |
+| ds4 | **0.731** | 0.663 | 0.647 ±0.168 | ANN |
+| Mean | **0.846** | 0.826 | 0.792 | ANN |
+
+**Kết luận:** CNN-1D yếu nhất — overfit nặng trên ds2/ds4 (gap ~0.33–0.36), CV unstable.
+Temporal dependencies trong data này là **long-range** → LSTM phù hợp hơn CNN-1D standalone.
+CNN-1D sẽ được dùng làm feature extractor trong hybrid model (Phase 7).
+
+---
+
 _Các phase tiếp theo sẽ được thêm vào sau._
