@@ -149,6 +149,24 @@ CNN-1D sẽ được dùng làm feature extractor trong hybrid model (Phase 7).
 
 ---
 
+## Best Models
+
+### Phase 4 — Best: Cell C
+- Architecture: Dense(64) → Dense(32) → Dense(16) → Dense(1)
+- Features: E1, E2 (2 features — không thêm gì)
+- Optimizer: Adam(lr=1e-3), EarlyStopping(patience=20)
+- Mean R²: **0.846** | K-Fold CV: **0.905**
+- Lý do chọn: tốt nhất trong 2×2 ablation, ổn định, không overfit
+
+### Phase 5 — Best: LSTM (Stacked)
+- Architecture: LSTM(64, return_seq=True) → LSTM(32) → Dense(16) → Dense(1)
+- Features: E1, E2 | Window: 20 steps
+- Optimizer: Adam(lr=1e-3), EarlyStopping(patience=20)
+- Mean R²: **0.826** | Tốt nhất ở ds1 (0.937) và ds2 (0.859)
+- Lý do chọn: duy nhất fix được overfitting của ANN trên ds2, ổn định hơn hẳn (std ±0.004–0.038)
+
+---
+
 ## Tổng kết tất cả phases
 
 ### Best model per dataset
