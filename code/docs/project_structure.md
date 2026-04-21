@@ -77,6 +77,6 @@ Columns: `Temperature`, `Strain`, `Electrode1_resistance`, `Electrode2_resistanc
 | 4 — Deep ANN + Regularization | `04_models/ann_deep.py` | ✅ Done |
 | 5 — LSTM | `05_models/lstm.py` | ✅ Done |
 | 6 — CNN-1D | `06_models/cnn1d.py` | ✅ Done |
-| 7 — CNN + LSTM Hybrid | `04_models/cnn_lstm.py` | 🔲 Todo |
+| 7 — CNN+LSTM Hybrid | `07_models/cnn_lstm.py` | ✅ Done |
 | 8 — Cross-temperature Eval | `05_cross_dataset_eval.py` | 🔲 Todo |
 | 9 — Hyperparameter Tuning | `06_hyperparameter_tuning.py` | 🔲 Todo |

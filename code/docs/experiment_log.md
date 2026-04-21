@@ -135,4 +135,42 @@ CNN-1D sẽ được dùng làm feature extractor trong hybrid model (Phase 7).
 
 ---
 
-_Các phase tiếp theo sẽ được thêm vào sau._
+## Phase 7 — CNN+LSTM Hybrid (2026-04-21)
+
+| Dataset | Mentor | ANN P4 | LSTM P5 | CNN P6 | Hybrid P7 |
+|---------|--------|--------|---------|--------|-----------|
+| ds1 | 0.628 | 0.908 | **0.937** | 0.900 | 0.897 ±0.011 |
+| ds2 | 0.342 | 0.835 | **0.859** | 0.782 | 0.856 ±0.047 |
+| ds3 | 0.856 | **0.910** | 0.843 | 0.838 | 0.885 ±0.021 |
+| ds4 | 0.720 | **0.731** | 0.663 | 0.647 | 0.575 ±0.136 |
+| **Mean** | 0.637 | **0.846** | 0.826 | 0.792 | 0.803 |
+
+**Kết luận:** Hybrid không thắng. ds4 collapse nặng (overfit gap=0.459). ANN P4 vẫn là best overall.
+
+---
+
+## Tổng kết tất cả phases
+
+### Best model per dataset
+
+| Dataset | Best Model | R² |
+|---------|-----------|-----|
+| ds1 (33°C) | LSTM P5 | **0.937** |
+| ds2 (43°C) | LSTM P5 | **0.859** |
+| ds3 (52°C) | ANN P4 | **0.910** |
+| ds4 (62°C) | ANN P4 | **0.731** |
+| **Overall** | **ANN P4 (mean 0.846)** | |
+
+### Ranking by mean R²
+
+| Rank | Model | Mean R² | vs Mentor |
+|------|-------|---------|----------|
+| 1 | ANN P4 (Cell C) | **0.846** | +0.209 |
+| 2 | LSTM P5 | 0.826 | +0.189 |
+| 3 | Hybrid P7 | 0.803 | +0.166 |
+| 4 | CNN-1D P6 | 0.792 | +0.155 |
+| — | Mentor baseline | 0.637 | — |
+
+---
+
+_Phase 8 (Cross-temperature generalization) và Phase 9 (Hyperparameter tuning) tiếp theo._
