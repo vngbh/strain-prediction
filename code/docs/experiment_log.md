@@ -95,4 +95,28 @@ _Mỗi lần chạy xong một phase, cập nhật kết quả vào đây._
 
 ---
 
+## Phase 5 — LSTM (2026-04-21)
+
+**Thiết kế:** Sliding window=20, LSTM(64)→LSTM(32)→Dense(16)→Dense(1), 3 seeds, TimeSeriesSplit CV.
+
+**R² mean ± std:**
+
+| Dataset | ANN (Cell C) | LSTM | Winner |
+|---------|-------------|------|--------|
+| ds1 | 0.915 ±0.011 | **0.937** ±0.004 | LSTM ✅ |
+| ds2 | 0.501 ±0.261 | **0.859** ±0.038 | LSTM ✅ |
+| ds3 | **0.913** ±0.006 | 0.843 ±0.023 | ANN |
+| ds4 | **0.741** ±0.021 | 0.663 ±0.019 | ANN |
+| Mean | 0.768 | **0.825** | LSTM ✅ |
+
+**Diagnostics:**
+- ds2 ANN overfit nghiêm trọng (gap train/test=0.453) → LSTM fix: gap=0.086
+- LSTM ổn định hơn nhiều trên ds2: std 0.261→0.038
+- ds4 LSTM borderline overfit (gap=0.194) — cần cải thiện
+- TimeSeriesSplit CV: ds1/ds3 stable, ds2/ds4 unstable (std>0.09)
+
+**Kết luận:** LSTM tốt hơn overall (+0.058), đặc biệt fix được ds2. Nhưng ds3/ds4 vẫn prefer ANN → hybrid model (Phase 7) là hướng tiếp theo.
+
+---
+
 _Các phase tiếp theo sẽ được thêm vào sau._

@@ -137,7 +137,7 @@ High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
 | 2 | Baseline ANN (reproduce mentor model) | ✅ Done |
 | 3 | Feature Engineering (Temperature, ΔR, R_ratio) | ✅ Done |
 | 4 | Deep ANN + Dropout + BatchNorm | ✅ Done |
-| 5 | LSTM / GRU (time-series) | 🔲 Todo |
+| 5 | LSTM (time-series, window=20) | ✅ Done |
 | 6 | CNN-1D | 🔲 Todo |
 | 7 | CNN + LSTM Hybrid | 🔲 Todo |
 | 8 | Cross-temperature Generalization | 🔲 Todo |
