@@ -1,6 +1,16 @@
 """
 Fair comparison: mentor baseline vs Phase 4 medium model.
 Same train/test split, same data, run in one script.
+
+Both models are trained fresh here so the comparison is fair (same seed, same split).
+Mentor: Dense(4) + E1+E2 + 50 epochs + no callbacks
+Phase4: Dense(64-32-16) + all 5 features + 300 epochs + EarlyStopping
+
+Input:  data/dataset{1-4}.csv
+Output: results/comparison/
+          prediction_comparison.png — ground truth vs predicted (time-series overlay)
+          scatter_comparison.png    — predicted vs actual scatter per model
+          comparison_metrics.json   — R², RMSE, MAE, MSE for both models
 """
 
 import json
@@ -71,7 +81,7 @@ for i in DATASETS:
     df_raw = load_dataset(i)
     df_aug = add_features(df_raw)
 
-    # ── Mentor model (2 raw features, no shuffle, 50 epochs) ─────────────
+    # ── Mentor model — fit scaler on full dataset (replicates original mentor setup) ──
     scaler_m = MinMaxScaler()
     X_m = scaler_m.fit_transform(df_raw[INPUT_FEATURES].values)
     y   = df_raw[OUTPUT_FEATURE].values

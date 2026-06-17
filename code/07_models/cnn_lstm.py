@@ -10,6 +10,12 @@ Motivation from previous phases:
 Architecture:
   Conv1D(64,k=3) → Conv1D(32,k=3) → LSTM(64) → Dense(16) → Dense(1)
   (CNN keeps sequence structure for LSTM — no GlobalAvgPool)
+
+Input:  data/dataset{1-4}.csv — E1, E2; window=20 → sequences (n, 20, 2)
+Output: results/phase7_cnn_lstm/
+          loss_curves.png          — train vs val loss (seed=0)
+          all_phases_comparison.png — R² across all 5 models (Mentor→Hybrid)
+          cnn_lstm_metrics.json
 """
 
 import json

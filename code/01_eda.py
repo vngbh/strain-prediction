@@ -1,6 +1,14 @@
 """
 Phase 1 — Exploratory Data Analysis
 Goal: Understand dataset structure, distributions, and the effect of Temperature on Strain.
+
+Input:  data/dataset{1-4}.csv
+Output: results/phase1_eda/
+          dataset_summary.csv   — per-dataset row count, temp, strain range
+          correlation_heatmap.png
+          strain_distribution.png
+          electrode_vs_strain.png
+          time_series.png
 """
 
 import os

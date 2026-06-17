@@ -10,6 +10,12 @@ Design:
   - TimeSeriesSplit CV (correct for sequential data — no future leakage)
   - Comparison baseline: Cell C (medium ANN, same features)
   - 3 seeds, built-in diagnostics
+
+Input:  data/dataset{1-4}.csv — E1, E2 only (same as Phase 4 Cell C for fair comparison)
+Output: results/phase5_lstm/
+          loss_curves.png    — ANN vs LSTM train/val loss per dataset (seed=0)
+          r2_comparison.png  — ANN vs LSTM R² bar chart
+          lstm_metrics.json  — comparison + TimeSeriesSplit CV results
 """
 
 import json
@@ -33,7 +39,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 # ── Sequence builder ──────────────────────────────────────────────────────────
 
 def make_sequences(X: np.ndarray, y: np.ndarray, window: int):
-    """Sliding window: X shape (n-window, window, features), y shape (n-window,)"""
+    """Sliding-window builder: raw (n, features) → sequences (n-window, window, features)."""
     Xs, ys = [], []
     for i in range(window, len(X)):
         Xs.append(X[i - window:i])

@@ -12,6 +12,11 @@ Search space:
 
 Protocol: same as Phase 4 — per-dataset, scaler fit on train only, 3 seeds final eval.
 Optuna runs on seed=0 only (speed), final evaluation uses 3 seeds.
+
+Input:  data/dataset{1-4}.csv — E1, E2 only (same features as P4 Cell C)
+Output: results/phase9_optuna/
+          optuna_vs_p4.png     — R² comparison: P4 Cell C vs Optuna best
+          optuna_results.json  — best params per dataset + final R² mean±std
 """
 
 import json
@@ -45,6 +50,7 @@ CALLBACKS = [
 
 
 def build_model(trial):
+    # Called by Optuna on each trial — architecture is sampled from the search space
     n_layers = trial.suggest_int("n_layers", 1, 4)
     lr       = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
     dropout  = trial.suggest_float("dropout", 0.0, 0.4, step=0.1)
@@ -63,6 +69,7 @@ def build_model(trial):
 
 
 def build_best(params):
+    # Reconstruct the best architecture from saved params for final 3-seed evaluation
     n_layers = params["n_layers"]
     lr       = params["lr"]
     dropout  = params["dropout"]

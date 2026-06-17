@@ -7,6 +7,12 @@ Tests:
   2. Residual analysis     — random residuals = good fit, patterns = bad
   3. K-Fold CV (k=5)       — unbiased estimate without fixed-split luck
   4. Learning curve        — performance vs training set size
+
+Input:  data/dataset{1-4}.csv — E1, E2; one fixed seed (SEED=0) for reproducibility
+Output: results/diagnostics/
+          residual_analysis.png  — residuals vs predicted + distribution + pred vs truth
+          learning_curves.png    — R² vs training set size per dataset
+          diagnostic_report.json — all four test results
 """
 
 import json

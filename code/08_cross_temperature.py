@@ -8,6 +8,11 @@ Two test setups:
      — hardest case, most realistic deployment scenario
 
 Models tested: ANN P4 Cell C vs LSTM P5 (the two best models)
+
+Input:  data/dataset{1-4}.csv — combined across datasets for cross-temp training
+Output: results/phase8_cross_temp/
+          cross_temp_results.png — LOO bar + within vs cross gap chart
+          cross_temp_metrics.json — LOO results + extrapolation results
 """
 
 import json
@@ -68,7 +73,7 @@ CALLBACKS = [
 
 
 def load_combined(train_ids):
-    """Load and concatenate multiple datasets for training."""
+    """Concatenate raw X and y arrays from multiple datasets for cross-temp training."""
     dfs = [load_dataset(i) for i in train_ids]
     X = np.vstack([df[INPUT_FEATURES].values for df in dfs])
     y = np.concatenate([df[OUTPUT_FEATURE].values for df in dfs])

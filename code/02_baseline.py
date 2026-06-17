@@ -2,6 +2,11 @@
 Phase 2 — Baseline ANN (revised)
 Reproduce mentor model exactly on ds1–ds4.
 Fixes vs original: scaler fit on X_train only, 3 seeds for robustness.
+
+Input:  data/dataset{1-4}.csv — features: E1, E2
+Output: results/phase2_baseline/
+          loss_curves.png       — train vs val loss per dataset (seed=0)
+          baseline_metrics.json — R², RMSE mean±std across 3 seeds
 """
 
 import json
@@ -22,6 +27,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def build_model():
+    # Mentor architecture: 2 inputs → Dense(4, relu) → Dense(1)
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(2,)),
         tf.keras.layers.Dense(4, activation="relu"),

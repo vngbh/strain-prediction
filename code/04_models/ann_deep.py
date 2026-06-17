@@ -3,6 +3,18 @@ Phase 4 — Deep ANN Ablation Study (revised)
 2×2 ablation: {mentor features, all features} × {mentor arch, medium arch}
 Each cell = 3 seeds → mean ± std.
 Scaler fit on X_train only. ds1–ds4 only.
+
+Input:  data/dataset{1-4}.csv — E1, E2 (+ derived features for some cells)
+Output: results/phase4_deep_ann/
+          loss_curves.png     — train vs val loss, all 4 cells × 4 datasets (seed=0)
+          ablation_r2.png     — R² bar chart per cell per dataset
+          ablation_metrics.json
+
+Cells:
+  A — mentor arch (4 units) + mentor features (E1+E2),  50 epochs, no callbacks
+  B — mentor arch            + all features (5),         50 epochs, no callbacks
+  C — medium arch (64-32-16) + mentor features,         300 epochs, EarlyStopping
+  D — medium arch            + all features (5),        300 epochs, EarlyStopping
 """
 
 import json

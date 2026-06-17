@@ -7,6 +7,12 @@ Compared to ANN: sees temporal context (same window=20 as LSTM).
 Architecture: Conv1D(64,3) → Conv1D(32,3) → GlobalAvgPool → Dense(16) → Dense(1)
 Same window, same features (E1+E2), same split as Phase 5 — fair 3-way comparison.
 Built-in diagnostics: overfitting check, TimeSeriesSplit CV, 3 seeds.
+
+Input:  data/dataset{1-4}.csv — E1, E2; window=20 → sequences (n, 20, 2)
+Output: results/phase6_cnn1d/
+          loss_curves.png    — CNN-1D train vs val loss (seed=0)
+          r2_comparison.png  — 3-way bar: ANN P4 vs LSTM P5 vs CNN-1D
+          cnn1d_metrics.json
 """
 
 import json

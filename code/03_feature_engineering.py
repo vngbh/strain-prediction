@@ -2,6 +2,11 @@
 Phase 3 — Feature Engineering (revised)
 Same architecture as mentor (Dense 4). Only features change.
 Fixes: scaler fit on X_train only, ds1–ds4, 3 seeds.
+
+Input:  data/dataset{1-4}.csv — E1, E2, Temperature
+Output: results/phase3_features/
+          feature_comparison.png — R² bar chart per feature set per dataset
+          feature_metrics.json   — mean±std R² for all 4 feature sets
 """
 
 import json
@@ -22,12 +27,14 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def add_features(df):
+    """Append derived features: resistance difference and ratio between electrodes."""
     df = df.copy()
     df["delta_R"] = df["Electrode1_resistance"] - df["Electrode2_resistance"]
     df["R_ratio"]  = df["Electrode1_resistance"] / df["Electrode2_resistance"]
     return df
 
 
+# Four feature sets tested in isolation — architecture held constant for clean ablation
 FEATURE_SETS = {
     "baseline (E1+E2)":   INPUT_FEATURES,
     "+Temperature":        INPUT_FEATURES + ["Temperature"],
