@@ -13,9 +13,10 @@ Status: **Phase A–H complete.** Phase D-fix corrected/re-confirmed the same-te
 baseline comparison under an explicit "Task A: nowcasting" label with provenance-tracked windowing;
 Phase E identified B(T)/S(T); Phase F built and evaluated the analytical inverse baseline (v2,
 corrected after review); Phase G ran the calibration-level study (G0-G4) and found a clear, deployable
-answer; Phase H added a time-boxed interpretable residual correction on top of the Phase G calibrated
-inverse, which meaningfully improved results (see below). This is a checkpoint, not a final decision —
-see "Current Status / Next Decision" at the end of this report.
+answer; Phase H (v2, final decision run) tested a pre-registered residual-learning extension against a
+strict per-direction keep/drop rule and **rejected it** — the final method is the Phase G calibrated
+physical inverse alone, with residual learning documented as a tested-but-rejected extension. This is a
+checkpoint, not a final decision — see "Current Status / Next Decision" at the end of this report.
 
 ### Authoritative-results ledger (read this before citing any number for the thesis)
 
@@ -33,6 +34,7 @@ COMPARISON** and must not be cited as generalization numbers without the caveat 
 | `research_diagnosis/tables/analytical_inverse_results.csv` (v2) | **AUTHORITATIVE** | Phase F mandatory comparison, identical test rows across all methods; v1 (F2 clipping bug, merged oracle, post-hoc electrode pick) is superseded in place — see "Analytical Inverse Baseline (Phase F, v2 — corrected after review)". |
 | `research_diagnosis/tables/B_temperature_model_LOO.csv`, `S_temperature_model_LOO.csv` | **AUTHORITATIVE** | Phase E LOO backtest, bootstrap-by-cycle. |
 | `research_diagnosis/tables/calibration_results_all.csv`, `calibration_summary.csv` | **AUTHORITATIVE** | Phase G calibration-level study (G0-G4), both calibration directions reported, all selection done on calibration-internal data only. |
+| `research_diagnosis/tables/residual_per_direction_rmse.csv`, `residual_decision_rule.csv` (v2) | **AUTHORITATIVE** | Phase H final decision run — per-direction results, pre-registered keep/drop rule. Decision: DROP all residual models. v1 (mean-only reporting, `cycle_idx` leakage bug) is superseded in place. |
 
 ---
 
@@ -587,59 +589,77 @@ specific new idea addresses the conditioning problem directly.
 
 ---
 
-## Phase H — Interpretable Residual Correction (time-boxed)
+## Phase H — Interpretable Residual Correction (v2, final decision run)
 
-Script: `scripts/phase_h_residual_learning.py`. Baseline = the Phase G "G3, 3-point" calibrated inverse
-(the best deployable level from Phase G), with a calibration-internal-validated electrode fusion weight
-(identical protocol to Phase G — the real test Experiment is never used to pick anything). Residual
-target: `r = true_strain - eps_physical`, fit on the CALIBRATION Experiment's own residual (true strain
-is known there) and applied to the TEST Experiment (cross-session, matching Phase G's main deployment
-scenario), both calibration directions run and averaged.
+Script: `scripts/phase_h_residual_learning.py`. This supersedes an earlier v1 pass in place after two
+review rounds found real issues to fix:
 
-**Features (all deployable — resistance- or physical-prediction-derived only, never true strain):**
-smoothed dR1/dt and dR2/dt; branch (loading/unloading) inferred from resistance derivative sign;
-running (causal) max/min of R1 and R2; time since last turning point; cycle index; the physical
-prediction itself; rolling mean/std of R1 and R2 (20-sample window).
+1. **Column-semantics check (done before this run, per the reviewer's request).** `Experiment` is a
+   measurement **session** id — exactly 2 distinct values per dataset (e.g. ds1 = {3,4}), each with its
+   own `Idx` restarting at 0. Sessions are not the same thing as loading cycles: each session contains
+   ~10 loading/unloading cycles internally, found by turning-point detection on the strain signal
+   (Phase B), not given as a raw column. `Experiment`/`Idx` are used only to sort rows and choose
+   calibration vs. test sessions — confirmed by code audit that neither is ever passed as a model input.
+2. **Leakage bug fix.** v1's `cycle_idx` feature was computed via `detect_turning_points(df["Strain"])`
+   on the TEST dataframe too — i.e. it used the true strain signal (through its turning points) as an
+   inference-time feature. Removed entirely (also required by the explicit rule against using cycle ID
+   as a feature).
+3. **Small GRU added**, and results are now reported **per calibration direction** (not averaged before
+   the decision), per the reviewer's stricter final-decision protocol.
 
-**Escalation (per the reviewer's own decision rule — do not jump straight to GRU/TCN/Transformer,
-only escalate if the simpler level shows a real gain):**
+Baseline = Phase G "G3, 3-point" calibrated inverse with calibration-internal-validated electrode
+fusion (same protocol as Phase G throughout — the real test session is never used to pick anything).
+Residual target: `r = true_strain - eps_physical`, fit on the calibration session's own residual,
+applied to the test session (cross-session). Features (all deployable: resistance/temperature/
+physical-prediction only, never true strain, its derivative, or any session/cycle ID): R1, R2,
+Temperature; smoothed dR1/dt, dR2/dt; rolling mean/std of R1, R2; running (causal) max/min of R1, R2;
+branch (loading/unloading) inferred from resistance derivative sign; time since last turning point
+(from resistance); the previous physical (G3) prediction.
 
-| Model | Mean R2 | Mean RMSE |
-|---|---|---|
-| 0. Calibration only (no residual) | 0.578 | 0.086 |
-| 1. Linear residual (OLS) | **-94.80** | 0.622 |
-| 2. Ridge residual | 0.643 | 0.077 |
-| **3. Small MLP residual (16,8)** | **0.816** | **0.058** |
+**Per-dataset x direction RMSE and % improvement vs. G3** (`tables/residual_per_direction_rmse.csv`):
 
-Per-dataset breakdown (`tables/residual_ablation_per_dataset.csv`):
+| Dataset | Direction | G3 RMSE | Ridge (% impr.) | MLP (% impr.) | GRU (% impr.) |
+|---|---|---|---|---|---|
+| ds1 (33C) | A→B | 0.069 | -19.4% | +25.9% | -31.8% |
+| ds1 (33C) | B→A | 0.057 | -60.3% | +41.9% | +26.7% |
+| ds2 (43C) | A→B | 0.161 | +58.2% | +55.2% | +50.1% |
+| ds2 (43C) | B→A | 0.136 | +75.8% | +28.2% | +67.4% |
+| ds3 (52C) | A→B | 0.045 | -131.0% | -22.0% | +40.3% |
+| ds3 (52C) | B→A | 0.061 | -75.0% | -22.1% | +3.0% |
+| ds4 (62C) | A→B | 0.093 | +61.6% | +68.5% | +46.3% |
+| ds4 (62C) | B→A | 0.068 | +20.7% | +8.7% | +1.6% |
 
-| Dataset | Calibration only | Linear (OLS) | Ridge | **MLP** |
-|---|---|---|---|---|
-| ds1 (33C) | 0.804 | -0.429 | 0.654 | **0.849** |
-| ds2 (43C) | -0.013 | 0.978 | 0.951 | **0.820** |
-| ds3 (52C) | 0.866 | -3.304 | 0.190 | **0.899** |
-| ds4 (62C) | 0.656 | -376.4 | 0.775 | **0.697** |
+**Pre-registered decision rule** (keep a model only if: mean RMSE improvement ≥10%; improves in
+**both** directions for **every** dataset; no dataset/direction degrades by more than 20%; ds2/43C
+improves) — `tables/residual_decision_rule.csv`:
 
-**Plain OLS residual is catastrophically unstable (mean R2 = -94.8, ranging from -376 to +0.98
-depending on fold)** — a clear sign of overfitting to collinear features (running max/min, rolling
-mean, and raw resistance are highly correlated; unregularized least squares on them is ill-conditioned
-and extrapolates wildly on the test Experiment). **This is exactly why the escalation rule exists**:
-Ridge (simple L2 regularization) immediately stabilizes every fold (worst case 0.19, no catastrophic
-failures) and the small MLP improves further and most consistently (worst case 0.70, best 0.90).
+| Model | Mean % improvement | Improves both directions, every dataset | Worst-case change | Major degradation (>20%) | 43C improvement | **KEEP** |
+|---|---|---|---|---|---|---|
+| Ridge | -8.7% | No | -131.0% | Yes | +67.0% | **No** |
+| Small MLP | +23.0% | No | -22.1% | Yes | +41.7% | **No** |
+| Small GRU | +25.4% | No | -31.8% | Yes | +58.7% | **No** |
 
-**The standout result: ds2 (43C) — the dataset most affected by session shift (Phase G) — improves
-dramatically with residual learning**, from R2=-0.013 (calibration alone) to **0.82-0.98** with
-Ridge/MLP. This directly confirms Phase G's own prediction (Output Summary N): the residual model is
-capturing exactly the session-shift-driven structure that static B(T)/S(T) recalibration could not
-correct. `figures/final_prediction_all_temperatures.png` shows the MLP-corrected predictions tracking
-the true sawtooth strain pattern closely at all 4 temperatures (R2 = 0.78-0.93 in the A_to_B direction
-shown); `figures/residual_vs_loading_state.png` compares calibration-only vs +residual side by side.
+**=> Final decision: DROP all residual models. Use the Phase G "G3" calibrated physical inverse alone
+as the final method.**
 
-**Conclusion: residual learning is not merely a secondary refinement — it is a substantial,
-consistent improvement** (mean R2 0.578 -> 0.816, +0.24), and specifically fixes the session-shift
-weakness that was the single largest known gap after Phase G. Per the time-box, GRU/TCN were not
-built: the small MLP already closes most of the gap and shows no sign of underfitting that would
-motivate a more complex sequence model, so escalating further is not currently justified.
+**Reading this honestly:** all 3 models show a real, substantial *mean* improvement (Ridge is the
+exception, unstable overall) — MLP +23%, GRU +25% — and ds2 (43C, the session-shift-heavy dataset)
+improves dramatically and consistently under every model (+28% to +76%), confirming Phase G's
+prediction that a residual model can recover exactly the session-shift structure static calibration
+misses. **But no single model is reliable everywhere**: ds3 is a consistent weak point for Ridge and
+MLP (both directions degrade, -22% to -131%) while GRU fixes ds3 but then fails ds1's A→B direction
+(-31.8%). Each candidate has at least one fold where it makes things meaningfully worse than
+calibration alone — exactly the failure mode the pre-registered rule was designed to catch, and
+exactly why the rule (not a post-hoc judgment call) is what decides this: **per the rule, none pass,
+so none are kept.** This is an honest negative result, not a failure of the residual-learning idea in
+principle — with only 4 datasets x 2 directions (8 evaluation folds) there isn't enough data to fit a
+per-dataset or per-direction model-selection rule reliably (the same small-sample problem seen
+throughout Phases E-G), so a single fixed residual model applied everywhere is the wrong level of
+ambition for what this dataset can support.
+
+`figures/final_prediction_all_temperatures.png` and `figures/residual_vs_loading_state.png` still show
+the MLP comparison for illustration, but per the decision above, **the MLP/Ridge/GRU results are
+reported as evidence for the decision, not as part of the final deployed method.**
 
 ---
 
@@ -648,40 +668,82 @@ motivate a more complex sequence model, so escalating further is not currently j
 *(Checkpoint, not a final decision — this section summarizes where things stand and what's supportable
 right now; it is not a declaration that the thesis direction is closed.)*
 
+**Output Summary (Phase H final decision run):**
+
+**A. Data-column semantics:** `Temperature`, `Electrode1_resistance`, `Electrode2_resistance` are
+inputs; `Strain` is the target; `Experiment` identifies a measurement **session** (2 per dataset), each
+containing ~10 loading/unloading cycles found by signal processing, not given as a column; `Idx` is
+within-session time order. Neither `Experiment` nor `Idx` is ever used as a model feature (audited).
+
+**B. G3 baseline results:** RMSE 0.045-0.161 across datasets/directions (see per-direction table above)
+— matches Phase G.
+
+**C. Ridge results:** mean -8.7% (worse than G3 overall); wildly unstable (-131% to +76%).
+
+**D. MLP results:** mean +23.0%; unstable at ds3 (-22% both directions) despite strong gains elsewhere.
+
+**E. GRU/TCN results:** mean +25.4%; fixes ds3 (+40%, +3.0%) but fails ds1 A→B (-31.8%).
+
+**F. Per-dataset improvement:** no model improves every dataset in both directions — each has a
+distinct, unpredictable failure fold (Ridge: ds1 and ds3; MLP: ds3; GRU: ds1 A→B).
+
+**G. 43C improvement:** strong and consistent across all 3 models (+28% to +76%) — residual learning
+does recover session-shift structure at 43C specifically, exactly as Phase G predicted.
+
+**H. Should deep learning remain in the thesis title?** **No, per the pre-registered decision rule** —
+no model satisfies "improves in both directions for every dataset with no degradation worse than 20%."
+Mean-level improvement is real (MLP/GRU: +23-25%), but reliability across all 8 evaluation folds is not
+established, and the rule (agreed before running the experiment) is what governs the decision, not a
+post-hoc judgment call.
+
+**I. Final recommended thesis method and title:**
+
+> **温度依存物理モデルと少数点校正に基づく繊維型抵抗センサのひずみ推定**
+> (Strain estimation for fiber-based resistive sensors based on a temperature-dependent physical model
+> and minimal-point calibration)
+
+The physics-based forward model + Phase G calibration (zero-balance + 3-point calibration +
+calibration-validated electrode fusion) is the final method. Residual learning (Phase H) is reported as
+a rigorously tested but ultimately **rejected** extension — a genuine, pre-registered negative result,
+which is itself a defensible thesis contribution (it demonstrates the calibration-only method's
+reliability bar and documents exactly where and why a natural next step falls short, rather than
+silently omitting the attempt).
+
 **What this project supports, end to end:** a physically-grounded forward model
-(`R_i(t) = B_i(T) + S_i(T)*epsilon(t) + residual`), combined with minimal same-session calibration
-(zero-balance + a few reference strain points, Phase G) and an interpretable residual correction on top
-(Phase H), recovers strong accuracy at a new temperature/session (mean R2 = 0.816) — clearly
-outperforming both a purely cross-temperature-extrapolated inverse (Phase F, mean R2 well below zero)
-and a deep ANN baseline (consistently and badly negative in every LOO fold tried, Phases D-fix and F).
-The mechanism is fully explained: temperature dominates raw resistance far more than strain does
-(Phase B); B(T)/S(T) are smooth and well-modeled by an exponential (Phase E); the static forward model
-is sound at a known temperature (Phase F true-oracle); most of the remaining gap at deployment is
-B(T)/S(T)-extrapolation error and session-to-session shift (Phase F error decomposition, Phase G
-session-shift analysis), and both are addressed — extrapolation error by calibration, session shift by
-the residual model (Phase H).
+(`R_i(t) = B_i(T) + S_i(T)*epsilon(t)`), combined with minimal same-session calibration (zero-balance +
+3 reference strain points + calibration-validated electrode fusion, Phase G), recovers strong accuracy
+at a new temperature/session — clearly outperforming both a purely cross-temperature-extrapolated
+inverse (Phase F, mean R2 well below zero) and a deep ANN baseline (consistently and badly negative in
+every LOO fold tried, Phases D-fix and F). The mechanism is fully explained: temperature dominates raw
+resistance far more than strain does (Phase B); B(T)/S(T) are smooth and well-modeled by an exponential
+(Phase E); the static forward model is sound at a known temperature (Phase F true-oracle); most of the
+remaining gap at deployment is B(T)/S(T)-extrapolation error and session-to-session shift (Phase F
+error decomposition, Phase G session-shift analysis) — extrapolation error is addressed by calibration;
+session shift is only partially addressed (Phase H shows it is recoverable in principle at 43C, but not
+reliably enough across all folds to include in the final method).
 
 **What this project does NOT support (do not claim these in the thesis):**
 - Generalization to other fiber-based sensors, materials, or sensor geometries — only this dataset's
   2 electrodes across 4 temperatures were studied.
 - Generalization to arbitrary unseen temperatures — only interpolation (ds2, ds3) and a narrow
   extrapolation range (ds1, ds4) were tested; nothing establishes behavior further outside 33-62C.
-- Industrial deployment-readiness — the calibration/residual pipeline was validated offline on
-  existing Experiment splits, not in a live deployment loop, and session-shift causes (data vs.
-  physical vs. operator/setup) remain an open, undetermined limitation (see Phase G).
-- That session shift is "solved" — Phase H's residual model compensates for it empirically at the 4
-  datasets tested; it is not a mechanistic fix and its own generalization to a genuinely new session
-  is untested beyond this LOO protocol.
-- Uniformly high accuracy in all conditions — ds4's extrapolation result (R2=0.66-0.70) is the weakest
-  of the 4 and should be reported as such, not smoothed over.
+- Industrial deployment-readiness — the calibration pipeline was validated offline on existing
+  Experiment splits, not in a live deployment loop, and session-shift causes (data vs. physical vs.
+  operator/setup) remain an open, undetermined limitation (see Phase G).
+- That session shift is "solved" — it is a documented, real, and only partially addressed limitation;
+  Phase H showed a residual model *can* recover it at some folds but not reliably across all of them.
+- Uniformly high accuracy in all conditions — ds3's calibration-only result is strong (0.85-0.87) but
+  ds2 (43C) remains the weakest same-method case, and ds4's extrapolation is the weakest overall.
 
 **Defensible thesis claim:** *"Within this dataset, a physically-grounded model of temperature-strain
-coupling, combined with minimal same-session calibration and an interpretable residual correction,
-substantially improves strain prediction at temperatures/sessions not used to build the model —
-while making explicit which remaining error is attributable to temperature-extrapolation, which to
-session-to-session variation, and which is not resolvable without additional experiment metadata."*
+coupling, combined with minimal same-session calibration, substantially improves strain prediction at
+temperatures/sessions not used to build the model. A subsequent, pre-registered test of residual
+machine-learning correction showed real but unreliable gains (improving 43C substantially but degrading
+at least one fold for every model tried) and was therefore excluded from the final method — a result
+that itself clarifies the reliability bar the calibration-only approach already meets and which further
+modeling has not yet safely exceeded."*
 
-**Status:** this is the current checkpoint, not a locked/final decision — no further phase is running
-right now, but the direction can still be revised pending your review. Historical/superseded artifacts
-have been removed from the working tree (recoverable via git history, commits up to `889da86`, if ever
-needed) per the decision to keep this project on a single, current direction.
+**Status:** this is the current checkpoint, not a locked/final decision — the direction can still be
+revised pending your review. Historical/superseded artifacts have been removed from the working tree
+(recoverable via git history, commits up to `889da86`, if ever needed) per the decision to keep this
+project on a single, current direction.
