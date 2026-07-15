@@ -1,0 +1,3 @@
+model,mean_pct_improvement,worst_case_pct_change,every_dataset_improves_both_directions,no_fold_degrades_over_10pct,ds2_43C_pct_improvement,KEEP
+1_calibrated_ann_only,-18.791449808691617,-156.36274187881787,False,False,27.85180592165416,False
+2_blended_final,16.412129896262893,6.543790580320184,True,True,18.57470882257276,True

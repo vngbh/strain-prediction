@@ -9,13 +9,15 @@ entire active project.
 Reproducibility: seeds `[0, 42, 123]`; package versions in `logs/package_versions.txt`; all scaler
 fitting is train-split-only in every script under `scripts/`.
 
-Status: **Phase A–H complete.** Phase D-fix corrected/re-confirmed the same-temperature and LOO
+Status: **Phase A–H2 complete.** Phase D-fix corrected/re-confirmed the same-temperature and LOO
 baseline comparison under an explicit "Task A: nowcasting" label with provenance-tracked windowing;
 Phase E identified B(T)/S(T); Phase F built and evaluated the analytical inverse baseline (v2,
 corrected after review); Phase G ran the calibration-level study (G0-G4) and found a clear, deployable
-answer; Phase H (v2, final decision run) tested a pre-registered residual-learning extension against a
-strict per-direction keep/drop rule and **rejected it** — the final method is the Phase G calibrated
-physical inverse alone, with residual learning documented as a tested-but-rejected extension. This is a
+answer; Phase H tested a fixed additive residual model against a strict per-direction keep/drop rule
+and **rejected it**; Phase H2 then tested a different combination (ANN on calibration-normalized
+features, blended with the physics prediction via a calibration-validated weight) against an even
+stricter rule and **it passed** — the current best-supported method combines the Phase G calibrated
+physical inverse with this calibrated-ANN blend. This is a
 checkpoint, not a final decision — see "Current Status / Next Decision" at the end of this report.
 
 ### Authoritative-results ledger (read this before citing any number for the thesis)
@@ -34,7 +36,8 @@ COMPARISON** and must not be cited as generalization numbers without the caveat 
 | `research_diagnosis/tables/analytical_inverse_results.csv` (v2) | **AUTHORITATIVE** | Phase F mandatory comparison, identical test rows across all methods; v1 (F2 clipping bug, merged oracle, post-hoc electrode pick) is superseded in place — see "Analytical Inverse Baseline (Phase F, v2 — corrected after review)". |
 | `research_diagnosis/tables/B_temperature_model_LOO.csv`, `S_temperature_model_LOO.csv` | **AUTHORITATIVE** | Phase E LOO backtest, bootstrap-by-cycle. |
 | `research_diagnosis/tables/calibration_results_all.csv`, `calibration_summary.csv` | **AUTHORITATIVE** | Phase G calibration-level study (G0-G4), both calibration directions reported, all selection done on calibration-internal data only. |
-| `research_diagnosis/tables/residual_per_direction_rmse.csv`, `residual_decision_rule.csv` (v2) | **AUTHORITATIVE** | Phase H final decision run — per-direction results, pre-registered keep/drop rule. Decision: DROP all residual models. v1 (mean-only reporting, `cycle_idx` leakage bug) is superseded in place. |
+| `research_diagnosis/tables/residual_per_direction_rmse.csv`, `residual_decision_rule.csv` (v2) | **AUTHORITATIVE, superseded conclusion** | Phase H final decision run on fixed additive residual models. Decision: DROP (see Phase H2 for the combination that passed instead). v1 (mean-only reporting, `cycle_idx` leakage bug) is superseded in place. |
+| `research_diagnosis/tables/calibrated_ann_per_direction_rmse.csv`, `calibrated_ann_decision_rule.csv` | **AUTHORITATIVE — current final decision** | Phase H2 — calibrated-feature ANN blended with physics via a calibration-selected weight. Decision: KEEP (blended variant only, not the ANN alone). |
 
 ---
 
@@ -663,85 +666,157 @@ reported as evidence for the decision, not as part of the final deployed method.
 
 ---
 
+## Phase H2 — Calibrated-Feature ANN (final combination test — PASSES)
+
+Script: `scripts/phase_h2_calibrated_ann.py`. Key difference from Phase H: instead of feeding raw
+`(R1, R2, T)` to an ANN (what the original repo's Deep ANN did) or adding an ANN-predicted residual on
+top of the physics prediction (Phase H), this **physically normalizes the input first**, using the
+same Phase G G3 calibration (`B_i`, `S_i` from zero-balance + 3 reference points):
+
+```
+z_i(t) = (R_i(t) - B_i) / S_i        # per-electrode physical strain estimate
+[z1, z2, dz1, dz2, T] -> small ANN (Dense(8)->Dense(4)->Dense(1), L2=1e-2, early stopping) -> eps_ANN
+eps_final = alpha*eps_ANN + (1-alpha)*eps_physics(G3)
+```
+
+`alpha` is selected per calibration session **only from that session's own internal train/val split**
+(same protocol as Phase G/H — never the real test session), by grid search minimizing internal
+validation RMSE.
+
+**Per-dataset x direction results** (`tables/calibrated_ann_per_direction_rmse.csv`):
+
+| Dataset | Direction | G3 RMSE | ANN-only (% impr.) | **Blended (% impr., alpha)** |
+|---|---|---|---|---|
+| ds1 (33C) | A→B | 0.069 | -104.5% | **+7.7% (alpha=0.10)** |
+| ds1 (33C) | B→A | 0.057 | -156.4% | **+18.9% (alpha=0.15)** |
+| ds2 (43C) | A→B | 0.161 | +23.7% | **+20.6% (alpha=0.80)** |
+| ds2 (43C) | B→A | 0.136 | +32.1% | **+16.5% (alpha=0.25)** |
+| ds3 (52C) | A→B | 0.045 | -0.9% | **+6.5% (alpha=0.65)** |
+| ds3 (52C) | B→A | 0.061 | +28.6% | **+28.0% (alpha=0.50)** |
+| ds4 (62C) | A→B | 0.093 | +15.8% | **+13.9% (alpha=0.65)** |
+| ds4 (62C) | B→A | 0.068 | +11.4% | **+19.1% (alpha=0.85)** |
+
+**Decision rule** (keep only if: improves every dataset in both directions; no fold degrades more than
+10%; 43C improves; mean RMSE reduction ≥10%) — `tables/calibrated_ann_decision_rule.csv`:
+
+| Model | Mean % improvement | Worst-case change | Every dataset improves, both directions | No fold degrades >10% | 43C improvement | **KEEP** |
+|---|---|---|---|---|---|---|
+| Calibrated ANN alone (alpha=1) | -18.8% | -156.4% | No | No | +27.9% | **No** |
+| **Blended (calibration-selected alpha)** | **+16.4%** | **+6.5%** | **Yes** | **Yes** | **+18.6%** | **YES** |
+
+**=> This passes.** Unlike Phase H's fixed additive residual model, the calibrated ANN **alone** is
+just as unstable as before (catastrophic at ds1: -104% to -156%, same overfitting-to-calibration-noise
+failure mode as Phase H's MLP). But **the alpha-blend rescues it**: `alpha` is chosen automatically,
+per deployment, from calibration-internal data alone, and it does exactly what you'd want —
+**ds1 (where the ANN fails) gets alpha=0.10-0.15 (mostly physics); ds3/ds4 (where the ANN helps) get
+alpha=0.50-0.85 (mostly ANN)**. The blend is never worse than G3 alone in any of the 8 folds tested
+(worst case is still +6.5%, not a degradation), and 43C improves by 18.6% — a real, reliable, and
+*better-behaved* result than Phase H's fixed residual model.
+
+**Important scope note:** the original repo's Deep ANN reached R2=0.85, but that was measured
+**same-temperature** (train/test split within one temperature — an easy, in-domain task, see Phase B/D
+discussion above). This experiment is evaluated cross-session under Phase G's harder, actual-deployment
+protocol, so R2 in the 0.25-0.92 range here (mean R2 across folds ≈ 0.70) is **not directly comparable**
+to that 0.85 and should not be read as "matching" it — the comparison that matters is against G3
+(physics + calibration alone), which this blend reliably beats.
+
+**Revised final method:** physics-based forward model + Phase G calibration (zero-balance + 3-point +
+electrode fusion) **as the front-end**, with a **small ANN operating on the calibration-normalized
+features** (`z1, z2, dz1, dz2, T`) as a **calibration-validated nonlinear correction**, blended via an
+alpha weight chosen from calibration data alone. This reverses Phase H's "drop all residual models"
+conclusion — the earlier rejection was specific to *adding an unconstrained residual model on raw
+resistance-derived features*; normalizing the input first and gating the ANN's contribution through a
+calibration-validated blend weight fixes exactly the reliability problem that got Phase H's models
+rejected.
+
+---
+
 ## Current Status / Next Decision
 
 *(Checkpoint, not a final decision — this section summarizes where things stand and what's supportable
 right now; it is not a declaration that the thesis direction is closed.)*
 
-**Output Summary (Phase H final decision run):**
+**Output Summary (superseded by Phase H2 — see below for the current decision):**
 
 **A. Data-column semantics:** `Temperature`, `Electrode1_resistance`, `Electrode2_resistance` are
 inputs; `Strain` is the target; `Experiment` identifies a measurement **session** (2 per dataset), each
 containing ~10 loading/unloading cycles found by signal processing, not given as a column; `Idx` is
 within-session time order. Neither `Experiment` nor `Idx` is ever used as a model feature (audited).
 
-**B. G3 baseline results:** RMSE 0.045-0.161 across datasets/directions (see per-direction table above)
-— matches Phase G.
+**B. G3 baseline results:** RMSE 0.045-0.161 across datasets/directions — matches Phase G.
 
-**C. Ridge results:** mean -8.7% (worse than G3 overall); wildly unstable (-131% to +76%).
+**C-G. Phase H (fixed additive residual on raw resistance-derived features):** Ridge mean -8.7%
+(unstable, -131% to +76%); MLP mean +23.0% (fails ds3, -22% both directions); GRU mean +25.4% (fixes
+ds3, fails ds1 A→B, -31.8%). No model satisfied "improves every dataset in both directions with no
+fold degrading >20%" — **Phase H's fixed residual models were rejected** (see Phase H section above for
+full detail; this conclusion is superseded below, not because Phase H's numbers were wrong, but because
+Phase H2 found a materially different, more reliable way to combine physics with an ANN).
 
-**D. MLP results:** mean +23.0%; unstable at ds3 (-22% both directions) despite strong gains elsewhere.
+**H2. Calibrated-feature ANN + calibration-validated blend (final combination test) — PASSES.**
+Normalizing the input first (`z_i = (R_i-B_i)/S_i` via Phase G's own calibration) before the ANN, then
+blending the ANN's prediction with the physics prediction using a weight `alpha` selected from
+calibration-internal data alone, **passes the (even stricter) pre-registered decision rule**: mean RMSE
+improvement +16.4%, worst-case fold change **+6.5% (never a degradation)**, every dataset improves in
+both directions, and 43C improves by 18.6%. The blend weight adapts sensibly per fold (ds1, where the
+raw ANN fails, gets alpha=0.10-0.15 i.e. mostly physics; ds3/ds4, where the ANN helps, get
+alpha=0.50-0.85). See "Phase H2" above for the full table.
 
-**E. GRU/TCN results:** mean +25.4%; fixes ds3 (+40%, +3.0%) but fails ds1 A→B (-31.8%).
+**I. Final recommended thesis method and title (revised after Phase H2):**
 
-**F. Per-dataset improvement:** no model improves every dataset in both directions — each has a
-distinct, unpredictable failure fold (Ridge: ds1 and ds3; MLP: ds3; GRU: ds1 A→B).
+> **温度依存物理正規化とANN補正を統合した繊維型抵抗センサのひずみ推定**
+> (Strain estimation for fiber-based resistive sensors combining temperature-dependent physical
+> normalization with a calibration-validated ANN correction)
 
-**G. 43C improvement:** strong and consistent across all 3 models (+28% to +76%) — residual learning
-does recover session-shift structure at 43C specifically, exactly as Phase G predicted.
-
-**H. Should deep learning remain in the thesis title?** **No, per the pre-registered decision rule** —
-no model satisfies "improves in both directions for every dataset with no degradation worse than 20%."
-Mean-level improvement is real (MLP/GRU: +23-25%), but reliability across all 8 evaluation folds is not
-established, and the rule (agreed before running the experiment) is what governs the decision, not a
-post-hoc judgment call.
-
-**I. Final recommended thesis method and title:**
-
-> **温度依存物理モデルと少数点校正に基づく繊維型抵抗センサのひずみ推定**
-> (Strain estimation for fiber-based resistive sensors based on a temperature-dependent physical model
-> and minimal-point calibration)
-
-The physics-based forward model + Phase G calibration (zero-balance + 3-point calibration +
-calibration-validated electrode fusion) is the final method. Residual learning (Phase H) is reported as
-a rigorously tested but ultimately **rejected** extension — a genuine, pre-registered negative result,
-which is itself a defensible thesis contribution (it demonstrates the calibration-only method's
-reliability bar and documents exactly where and why a natural next step falls short, rather than
-silently omitting the attempt).
+The method is: physics-based forward model + Phase G calibration (zero-balance + 3-point + electrode
+fusion) **as a front-end normalization step**, feeding a small ANN whose contribution is blended with
+the physics prediction via a weight chosen entirely from calibration data. This reverses Phase H's
+"drop all deep learning" conclusion — **the earlier rejection was specific to adding an unconstrained
+residual model on raw resistance-derived features; physically normalizing the input first, and gating
+the ANN's influence through a calibration-validated blend, fixes exactly the reliability problem that
+got Phase H's models rejected.** If, after your review, this result is not trusted enough to lead the
+thesis (e.g. because of the still-small 8-fold evaluation base), the fallback title from Phase H
+(`温度依存物理モデルと少数点校正に基づく繊維型抵抗センサのひずみ推定`, calibration-only, no ANN) remains
+fully supported and is a safe, defensible alternative — Phase H2's ANN blend is the current best-tested
+method, not the only acceptable one.
 
 **What this project supports, end to end:** a physically-grounded forward model
-(`R_i(t) = B_i(T) + S_i(T)*epsilon(t)`), combined with minimal same-session calibration (zero-balance +
-3 reference strain points + calibration-validated electrode fusion, Phase G), recovers strong accuracy
-at a new temperature/session — clearly outperforming both a purely cross-temperature-extrapolated
-inverse (Phase F, mean R2 well below zero) and a deep ANN baseline (consistently and badly negative in
-every LOO fold tried, Phases D-fix and F). The mechanism is fully explained: temperature dominates raw
-resistance far more than strain does (Phase B); B(T)/S(T) are smooth and well-modeled by an exponential
-(Phase E); the static forward model is sound at a known temperature (Phase F true-oracle); most of the
-remaining gap at deployment is B(T)/S(T)-extrapolation error and session-to-session shift (Phase F
-error decomposition, Phase G session-shift analysis) — extrapolation error is addressed by calibration;
-session shift is only partially addressed (Phase H shows it is recoverable in principle at 43C, but not
-reliably enough across all folds to include in the final method).
+(`R_i(t) = B_i(T) + S_i(T)*epsilon(t)`) with minimal same-session calibration (Phase G) is sound and
+outperforms both a purely cross-temperature-extrapolated inverse (Phase F) and a deep ANN baseline
+(consistently and badly negative in every LOO fold tried, Phases D-fix and F). On top of that, a small
+ANN trained on calibration-normalized features, blended with the physics prediction via a
+calibration-validated weight (Phase H2), reliably improves on calibration alone in every tested fold —
+including recovering much of the session-shift weakness at 43C that static calibration alone could not
+fix. The mechanism is fully explained throughout: temperature dominates raw resistance far more than
+strain does (Phase B); B(T)/S(T) are smooth and well-modeled by an exponential (Phase E); the static
+forward model is sound at a known temperature (Phase F true-oracle); the remaining gap is
+B(T)/S(T)-extrapolation error (addressed by calibration) and session-to-session shift (now
+substantially, though not perfectly, addressed by the calibrated-ANN blend).
 
 **What this project does NOT support (do not claim these in the thesis):**
 - Generalization to other fiber-based sensors, materials, or sensor geometries — only this dataset's
   2 electrodes across 4 temperatures were studied.
 - Generalization to arbitrary unseen temperatures — only interpolation (ds2, ds3) and a narrow
   extrapolation range (ds1, ds4) were tested; nothing establishes behavior further outside 33-62C.
-- Industrial deployment-readiness — the calibration pipeline was validated offline on existing
-  Experiment splits, not in a live deployment loop, and session-shift causes (data vs. physical vs.
-  operator/setup) remain an open, undetermined limitation (see Phase G).
-- That session shift is "solved" — it is a documented, real, and only partially addressed limitation;
-  Phase H showed a residual model *can* recover it at some folds but not reliably across all of them.
-- Uniformly high accuracy in all conditions — ds3's calibration-only result is strong (0.85-0.87) but
-  ds2 (43C) remains the weakest same-method case, and ds4's extrapolation is the weakest overall.
+- Industrial deployment-readiness — the pipeline was validated offline on existing Experiment splits,
+  not in a live deployment loop, and session-shift causes (data vs. physical vs. operator/setup) remain
+  an open, undetermined limitation (see Phase G).
+- That session shift is fully "solved" — Phase H2 substantially improves on it (never worse than
+  calibration alone, +18.6% at 43C) but ds2 remains the weakest fold overall (R2 0.25-0.41); it is
+  improved, not eliminated.
+- That this beats the original repo's same-temperature Deep ANN (R2=0.85) — that number measures a
+  different, easier, in-domain task (see Phase H2's scope note); the correct comparison is against G3
+  physics+calibration alone, which this blend reliably beats.
+- Uniformly high accuracy in all conditions — ds2 (43C) remains the weakest fold even after the
+  Phase H2 improvement, and this should be reported plainly, not smoothed over.
 
 **Defensible thesis claim:** *"Within this dataset, a physically-grounded model of temperature-strain
 coupling, combined with minimal same-session calibration, substantially improves strain prediction at
-temperatures/sessions not used to build the model. A subsequent, pre-registered test of residual
-machine-learning correction showed real but unreliable gains (improving 43C substantially but degrading
-at least one fold for every model tried) and was therefore excluded from the final method — a result
-that itself clarifies the reliability bar the calibration-only approach already meets and which further
-modeling has not yet safely exceeded."*
+temperatures/sessions not used to build the model. Feeding the calibration-normalized signal (rather
+than raw resistance) into a small ANN, and blending its prediction with the physics prediction using a
+weight selected entirely from calibration data, reliably improves further in every tested fold —
+including partially recovering the session-shift weakness a purely static calibration could not fix —
+without the instability seen when the same ANN is applied to raw, unnormalized features or as an
+unconstrained additive residual."*
 
 **Status:** this is the current checkpoint, not a locked/final decision — the direction can still be
 revised pending your review. Historical/superseded artifacts have been removed from the working tree
