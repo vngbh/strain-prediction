@@ -1,0 +1,326 @@
+[
+  {
+    "label": "C1_random_split",
+    "subsample_1_20": false,
+    "runs": [
+      {
+        "seed": 0,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9999253213616538,
+            "rmse": 0.10651310764571287,
+            "mae": 0.07879285556464939
+          },
+          "Strain": {
+            "r2": 0.8982929560709265,
+            "rmse": 0.04553618991034814,
+            "mae": 0.03682626331953706
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -73203.32396200922,
+            "rmse": 9.565159446381049,
+            "mae": 9.564849859799038
+          },
+          "Strain": {
+            "r2": -2.5029908395425915,
+            "rmse": 0.2769560142481732,
+            "mae": 0.23411616951325714
+          }
+        },
+        "n_train": 47338,
+        "n_val": 10144,
+        "n_test": 10145
+      },
+      {
+        "seed": 42,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9999678984742785,
+            "rmse": 0.06973678795936383,
+            "mae": 0.05820969337910815
+          },
+          "Strain": {
+            "r2": 0.8987278134497861,
+            "rmse": 0.04545669195663156,
+            "mae": 0.03655594488687854
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -75025.13079633603,
+            "rmse": 9.683450161153653,
+            "mae": 9.682921930070544
+          },
+          "Strain": {
+            "r2": -2.5029908403824446,
+            "rmse": 0.2769560142813737,
+            "mae": 0.23411616999569884
+          }
+        },
+        "n_train": 47338,
+        "n_val": 10144,
+        "n_test": 10145
+      },
+      {
+        "seed": 123,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9999728704462867,
+            "rmse": 0.06431937329867268,
+            "mae": 0.04971168938417826
+          },
+          "Strain": {
+            "r2": 0.9117939083015152,
+            "rmse": 0.04251675335437731,
+            "mae": 0.03513729828053346
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -77837.27199454559,
+            "rmse": 9.86325905285469,
+            "mae": 9.863029237118672
+          },
+          "Strain": {
+            "r2": -2.5010609365839467,
+            "rmse": 0.27687971204044975,
+            "mae": 0.2339377211727097
+          }
+        },
+        "n_train": 47338,
+        "n_val": 10144,
+        "n_test": 10145
+      }
+    ],
+    "within_pool_test_Temperature_r2_mean": 0.9999553634274063,
+    "within_pool_test_Temperature_r2_std": 2.133970340971313e-05,
+    "within_pool_test_Temperature_rmse_mean": 0.08018975630124979,
+    "within_pool_test_Strain_r2_mean": 0.9029382259407427,
+    "within_pool_test_Strain_r2_std": 0.00626442909296402,
+    "within_pool_test_Strain_rmse_mean": 0.04450321174045233,
+    "ds2_43C_unseen_Temperature_r2_mean": -75355.24225096362,
+    "ds2_43C_unseen_Temperature_r2_std": 1906.1477332426564,
+    "ds2_43C_unseen_Temperature_rmse_mean": 9.703956220129799,
+    "ds2_43C_unseen_Strain_r2_mean": -2.5023475388363274,
+    "ds2_43C_unseen_Strain_r2_std": 0.0009097651773484856,
+    "ds2_43C_unseen_Strain_rmse_mean": 0.2769305801899989
+  },
+  {
+    "label": "C1_random_split_1of20",
+    "subsample_1_20": true,
+    "runs": [
+      {
+        "seed": 0,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9998514287358456,
+            "rmse": 0.14714873062932196,
+            "mae": 0.11449549666997949
+          },
+          "Strain": {
+            "r2": 0.8696621018420359,
+            "rmse": 0.050659343682196045,
+            "mae": 0.04062411847109497
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -78128.58200763485,
+            "rmse": 9.881698457833664,
+            "mae": 9.88164198464938
+          },
+          "Strain": {
+            "r2": -2.4897898358722466,
+            "rmse": 0.27643366798321517,
+            "mae": 0.23349940023498647
+          }
+        },
+        "n_train": 2367,
+        "n_val": 507,
+        "n_test": 508
+      },
+      {
+        "seed": 42,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9999218133106617,
+            "rmse": 0.10937979404826718,
+            "mae": 0.08311773548756987
+          },
+          "Strain": {
+            "r2": 0.891356735902264,
+            "rmse": 0.046822418562515206,
+            "mae": 0.03781848047336707
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -77814.59274258168,
+            "rmse": 9.861822050029637,
+            "mae": 9.86176774710007
+          },
+          "Strain": {
+            "r2": -2.489792543093449,
+            "rmse": 0.2764337752055662,
+            "mae": 0.2334995711040299
+          }
+        },
+        "n_train": 2367,
+        "n_val": 507,
+        "n_test": 508
+      },
+      {
+        "seed": 123,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": 0.9998930058052468,
+            "rmse": 0.12733476823483958,
+            "mae": 0.09111222255196176
+          },
+          "Strain": {
+            "r2": 0.8476379097819511,
+            "rmse": 0.05671896242712771,
+            "mae": 0.046191100664798986
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -77832.30002305655,
+            "rmse": 9.862944036702087,
+            "mae": 9.86288232077154
+          },
+          "Strain": {
+            "r2": -2.48978157874669,
+            "rmse": 0.2764333409507917,
+            "mae": 0.23349914686328105
+          }
+        },
+        "n_train": 2367,
+        "n_val": 507,
+        "n_test": 508
+      }
+    ],
+    "within_pool_test_Temperature_r2_mean": 0.999888749283918,
+    "within_pool_test_Temperature_r2_std": 2.8891585549821997e-05,
+    "within_pool_test_Temperature_rmse_mean": 0.12795443097080958,
+    "within_pool_test_Strain_r2_mean": 0.869552249175417,
+    "within_pool_test_Strain_r2_std": 0.01784830505567802,
+    "within_pool_test_Strain_rmse_mean": 0.05140024155727965,
+    "ds2_43C_unseen_Temperature_r2_mean": -77925.1582577577,
+    "ds2_43C_unseen_Temperature_r2_std": 144.02384861778114,
+    "ds2_43C_unseen_Temperature_rmse_mean": 9.86882151485513,
+    "ds2_43C_unseen_Strain_r2_mean": -2.4897879859041283,
+    "ds2_43C_unseen_Strain_r2_std": 4.663404442476167e-06,
+    "ds2_43C_unseen_Strain_rmse_mean": 0.27643359471319107
+  },
+  {
+    "label": "C2_strict_block_split",
+    "subsample_1_20": false,
+    "runs": [
+      {
+        "seed": 0,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": -0.4356366474957183,
+            "rmse": 0.05463737828192084,
+            "mae": 0.03766208277951546
+          },
+          "Strain": {
+            "r2": 0.9152774326874877,
+            "rmse": 0.0406835374689463,
+            "mae": 0.03714999593943764
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -78253.62315378914,
+            "rmse": 9.889602793703261,
+            "mae": 9.889540557503059
+          },
+          "Strain": {
+            "r2": -2.403823032350672,
+            "rmse": 0.27300763075212936,
+            "mae": 0.22945200140194608
+          }
+        },
+        "n_train": 45212,
+        "n_val": 10996,
+        "n_test": 11419
+      },
+      {
+        "seed": 42,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": -3613.0254660820146,
+            "rmse": 0.4227364312310982,
+            "mae": 0.4128618926546922
+          },
+          "Strain": {
+            "r2": 0.6743936347874215,
+            "rmse": 0.08393926878459418,
+            "mae": 0.0722712000422116
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -75705.59151302488,
+            "rmse": 9.727263791731112,
+            "mae": 9.727210244736813
+          },
+          "Strain": {
+            "r2": -2.5029908403824446,
+            "rmse": 0.2769560142813737,
+            "mae": 0.23411616999569884
+          }
+        },
+        "n_train": 46416,
+        "n_val": 11419,
+        "n_test": 9792
+      },
+      {
+        "seed": 123,
+        "within_pool_test": {
+          "Temperature": {
+            "r2": -2342.973397593741,
+            "rmse": 0.6508903943751903,
+            "mae": 0.6345509849214572
+          },
+          "Strain": {
+            "r2": 0.6316302852508631,
+            "rmse": 0.08386264887245701,
+            "mae": 0.06141873133550903
+          }
+        },
+        "ds2_43C_unseen": {
+          "Temperature": {
+            "r2": -78334.26211368354,
+            "rmse": 9.894696946037232,
+            "mae": 9.894634380063604
+          },
+          "Strain": {
+            "r2": -2.496030080849961,
+            "rmse": 0.27668070912824544,
+            "mae": 0.23381331759452226
+          }
+        },
+        "n_train": 44264,
+        "n_val": 11705,
+        "n_test": 11658
+      }
+    ],
+    "within_pool_test_Temperature_r2_mean": -1985.4781667744173,
+    "within_pool_test_Temperature_r2_std": 1496.3407475075885,
+    "within_pool_test_Temperature_rmse_mean": 0.37608806796273647,
+    "within_pool_test_Strain_r2_mean": 0.7404337842419242,
+    "within_pool_test_Strain_r2_std": 0.12485966006471252,
+    "within_pool_test_Strain_rmse_mean": 0.06949515170866583,
+    "ds2_43C_unseen_Temperature_r2_mean": -77431.15892683252,
+    "ds2_43C_unseen_Temperature_r2_std": 1220.6044500326632,
+    "ds2_43C_unseen_Temperature_rmse_mean": 9.837187843823868,
+    "ds2_43C_unseen_Strain_r2_mean": -2.4676146511943595,
+    "ds2_43C_unseen_Strain_r2_std": 0.045196910066515036,
+    "ds2_43C_unseen_Strain_rmse_mean": 0.27554811805391616
+  }
+]

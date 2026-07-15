@@ -1,0 +1,5 @@
+held_out,level,variant,rmse_ci_lo,rmse_ci_hi
+1,G0_zero_calibration,equal_weight,0.33776971785476384,0.3667662867893078
+2,G0_zero_calibration,equal_weight,0.06347468668897799,0.0955943520350527
+3,G0_zero_calibration,equal_weight,0.4292706269713871,0.4531481039696137
+4,G0_zero_calibration,equal_weight,0.1574834921188247,0.1713928910205723

@@ -1,21 +1,9 @@
-# Ignore all current project files
-*.pptx
-*.docx
-*.pdf
-*.mp4
-*.csv
-*.png
-
-# Folders
+# Folders (raw data and course materials — not part of the deliverable)
 data/
-Images/
 other/
 
 # macOS
 .DS_Store
-
-# Generated results
-code/results/
 
 # Python
 __pycache__/

@@ -1,20 +1,42 @@
 # Strain Prediction from Fiber-Based Sensors
 
-Predict mechanical **strain** from electrical resistance signals of fiber-based sensors using Deep Learning. This project improves upon a baseline ANN by systematically exploring feature engineering, advanced architectures, and cross-temperature generalization.
+Predict mechanical **strain** from electrical resistance signals of fiber-based sensors, with a focus
+on generalization across unseen temperatures. Prior deep-learning experiments (ANN, LSTM, CNN, CWT,
+Optuna) motivated the current direction but have been removed from the working tree to keep the
+project on a single direction — that code is still recoverable from git history (commits up to
+`889da86`) if it's ever needed again.
 
 ---
 
-## Background
+## Current direction
 
-Fiber-based strain sensors measure mechanical deformation by detecting changes in electrode resistance. The challenge: sensor behavior shifts across different temperatures (thermal drift), making it difficult to build a model that generalizes beyond its training conditions.
+A physically-grounded forward model,
 
-**Task:** Regression — given electrode resistance readings (and temperature), predict strain value.
+```
+R_i(t) = B_i(T) + S_i(T) * epsilon(t) + residual
+```
 
----
+combined with minimal same-session calibration and a calibration-validated electrode fusion weight,
+rather than a black-box deep-learning architecture. Full methodology, findings, and the authoritative
+results ledger are in **[`research_diagnosis/REPORT.md`](research_diagnosis/REPORT.md)**.
+
+Summary of what's been established so far (see REPORT.md for full detail and caveats):
+- The repo's original deep-learning pipeline had a few confirmed bugs (test-set leakage into Optuna,
+  minor window-boundary crossing) but none of them explain the catastrophic failure at unseen
+  temperatures — that failure reproduces even in a from-scratch paper-style model and in plain linear
+  regression baselines.
+- `B(T)` and `S(T)` (baseline resistance and strain-sensitivity, per electrode) are smooth, monotonic,
+  and well described by an exponential form — the physical model itself is sound.
+- A pure cross-temperature-extrapolated inverse is unreliable (electrode reliability doesn't transfer
+  across temperature), but **minimal in-session calibration (zero-balance + a few reference strain
+  points) recovers most of the achievable accuracy** and makes electrode selection stable — this is the
+  current core result.
+- Session-to-session (Experiment-to-Experiment) variation is a real, separate error source on top of
+  temperature; residual learning on top of the calibrated inverse is the planned next step (Phase H).
 
 ## Dataset
 
-5 CSV files collected at different temperatures. Each contains:
+5 CSV files collected at different temperatures (not included in this repository):
 
 | Column | Description |
 |--------|-------------|
@@ -27,34 +49,26 @@ Fiber-based strain sensors measure mechanical deformation by detecting changes i
 
 | Dataset | Samples | Temperature |
 |---------|---------|-------------|
-| dataset0 | 11,776 | ~21°C |
+| dataset0 | 11,776 | ~21°C (excluded — single experiment, sanity-check only) |
 | dataset1 | 23,053 | ~33°C |
 | dataset2 | 23,227 | ~43°C |
 | dataset3 | 21,497 | ~52°C |
 | dataset4 | 23,077 | ~62°C |
 
-> Dataset is not included in this repository.
-
 ---
 
-## Project Structure
+## Project structure
 
 ```
-code/
-├── utils/
-│   ├── data_loader.py       # Load datasets, feature definitions
-│   └── metrics.py           # MSE, MAE, RMSE, R² evaluation
-│
-├── 01_eda.py                # Phase 1: Exploratory Data Analysis
-├── 02_baseline.py           # Phase 2: Reproduce original ANN
-├── 03_feature_engineering.py  # Phase 3: Temperature + derived features
-│
-├── requirements.txt
-├── results/                 # Auto-generated outputs (not committed)
-└── docs/
-    ├── project_structure.md
-    ├── experiment_log.md    # Results log — updated each phase
-    └── phases/              # Detailed notes per phase
+research_diagnosis/
+├── REPORT.md              # Full findings, authoritative results ledger, decision log
+├── scripts/                # One script per diagnostic phase (B, C, D-fix, E, F, G, ...)
+├── tables/                 # CSV outputs — see REPORT.md's ledger for which are authoritative
+├── figures/                # PNG outputs referenced from REPORT.md
+└── logs/                   # Package versions for reproducibility
+
+data/            # Raw sensor CSVs (not committed)
+other/           # Original course/lab materials (assignment brief, mentor slides, etc.)
 ```
 
 ---
@@ -62,120 +76,20 @@ code/
 ## Setup
 
 ```bash
-# Create virtual environment
 python3.13 -m venv .venv
-source .venv/bin/activate       # macOS/Linux
-# .venv\Scripts\activate        # Windows
-
-# Install dependencies
-pip install -r requirements.txt
+source .venv/bin/activate
+pip install pandas numpy scipy scikit-learn matplotlib tensorflow keras
+# exact versions used are recorded in research_diagnosis/logs/package_versions.txt
 ```
-
----
 
 ## Run
 
+Each script under `research_diagnosis/scripts/` is self-contained and documents its own inputs/outputs
+in its docstring, e.g.:
+
 ```bash
-cd code
-
-# Phase 1 — EDA
-python 01_eda.py
-
-# Phase 2 — Baseline
-python 02_baseline.py
-
-# Phase 3 — Feature Engineering
-python 03_feature_engineering.py
+cd /path/to/strain-prediction
+.venv/bin/python3 research_diagnosis/scripts/phase_g_calibration.py
 ```
 
-Results are saved to `code/results/`.
-
----
-
-## Results
-
-_Evaluated on ds1–ds4 only. 3 random seeds, scaler fit on train only, each change isolated._
-
-### Phase 2 — Baseline (mean R² ± std, 3 seeds)
-
-| Dataset | Temp | R² mean | ±std |
-|---------|------|---------|------|
-| ds1 | 33°C | 0.628 | ±0.445 |
-| ds2 | 43°C | 0.342 | ±0.391 |
-| ds3 | 52°C | 0.856 | ±0.030 |
-| ds4 | 62°C | 0.720 | ±0.060 |
-| **Mean** | | **0.637** | |
-
-High std on ds1–ds2 = unstable, seed-sensitive — motivates the research.
-
-### Phase 3 — Feature effect (mentor arch fixed, 3 seeds)
-
-| Feature Set | ds1 | ds2 | ds3 | ds4 | mean |
-|-------------|-----|-----|-----|-----|------|
-| baseline (E1+E2) | 0.707 | 0.483 | 0.893 | 0.641 | 0.681 |
-| **+delta_R +R_ratio** | **0.900** | **0.808** | 0.762 | 0.716 | **0.797** |
-| all 5 features | 0.714 | 0.692 | 0.656 | 0.743 | 0.701 |
-
-### Phase 4 — Architecture effect (2×2 ablation, 3 seeds)
-
-| Cell | Architecture | Features | mean R² |
-|------|-------------|---------|---------|
-| A (baseline) | Dense(4) | E1, E2 | 0.541 |
-| B | Dense(4) | all 5 | 0.685 — feature effect: +0.144 |
-| **C (best)** | **Dense(64→32→16)** | **E1, E2** | **0.846** — arch effect: +0.305 |
-| D | Dense(64→32→16) | all 5 | 0.772 |
-
-**Architecture is the main driver (+0.305 vs +0.144 for features).**
-
-### All Phases — Final Comparison (mean R²)
-
-| Model | ds1 | ds2 | ds3 | ds4 | Mean |
-|-------|-----|-----|-----|-----|------|
-| Mentor baseline | 0.628 | 0.342 | 0.856 | 0.720 | 0.637 |
-| ANN P4 (Cell C) | 0.908 | 0.835 | 0.910 | 0.731 | 0.846 |
-| LSTM P5 | **0.937** | 0.859 | 0.843 | 0.663 | 0.826 |
-| CNN-1D P6 | 0.900 | 0.782 | 0.838 | 0.647 | 0.792 |
-| CNN+LSTM P7 | 0.897 | 0.856 | 0.885 | 0.575 | 0.803 |
-| **P9 Optuna** | 0.791 | **0.897** | **0.932** | **0.779** | **0.850** |
-
-**Best model overall: P9 Optuna (mean R²=0.850).** ANN P4 Cell C is close (0.846) and more stable on ds1. LSTM P5 wins on ds1 specifically. Hyperparameter tuning added only +0.004 mean R², confirming Phase 4 architecture was already near-optimal.
-
-### Phase 8 — Cross-temperature Generalization
-
-**Key finding: both models fail completely on unseen temperatures (R² < 0).**
-
-| Test DS | ANN R² (cross) | LSTM R² (cross) | Within-dataset ANN |
-|---------|---------------|-----------------|-------------------|
-| ds1 (33°C) | -14.38 | -40.33 | 0.908 |
-| ds2 (43°C) | -0.72 | -0.54 | 0.835 |
-| ds3 (52°C) | 0.013 | 0.010 | 0.910 |
-| ds4 (62°C) | -2.12 | -8.01 | 0.731 |
-
-Extrapolation (train 33–52°C → test 62°C): ANN R²=0.05, LSTM R²=-7.25 — both **❌ fail**.
-
-Thermal drift between temperatures creates entirely different resistance scales. MinMaxScaler trained on other temperatures cannot normalize unseen ones. This confirms that per-temperature calibration or domain adaptation is required for deployment.
-
----
-
-## Roadmap
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Exploratory Data Analysis | ✅ Done |
-| 2 | Baseline ANN (reproduce mentor model) | ✅ Done |
-| 3 | Feature Engineering (Temperature, ΔR, R_ratio) | ✅ Done |
-| 4 | Deep ANN + Dropout + BatchNorm | ✅ Done |
-| 5 | LSTM (time-series, window=20) | ✅ Done |
-| 6 | CNN-1D | ✅ Done |
-| 7 | CNN+LSTM Hybrid | ✅ Done |
-| 8 | Cross-temperature Generalization | ✅ Done |
-| 9 | Hyperparameter Tuning (Optuna) | ✅ Done |
-
----
-
-## Tech Stack
-
-- Python 3.13
-- TensorFlow / Keras
-- scikit-learn
-- pandas, numpy, matplotlib, seaborn
+See `research_diagnosis/REPORT.md` for what each phase script produces and how the results fit together.
