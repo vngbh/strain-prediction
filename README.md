@@ -1,95 +1,84 @@
-# Strain Prediction from Fiber-Based Sensors
+# Physics-Normalized Tree Boosting for Fiber Sensor Strain Prediction
 
-Predict mechanical **strain** from electrical resistance signals of fiber-based sensors, with a focus
-on generalization across unseen temperatures. Prior deep-learning experiments (ANN, LSTM, CNN, CWT,
-Optuna) motivated the current direction but have been removed from the working tree to keep the
-project on a single direction — that code is still recoverable from git history (commits up to
-`889da86`) if it's ever needed again.
-
----
-
-## Current direction
-
-A physically-grounded forward model,
+This project predicts mechanical strain from two resistive electrodes embedded in a fiber-reinforced
+composite sensor. The current research direction is intentionally narrow:
 
 ```
-R_i(t) = B_i(T) + S_i(T) * epsilon(t) + residual
+raw resistance + temperature
+  -> same-session physical calibration
+  -> physical normalization z_i = (R_i - B_i) / S_i
+  -> tree-based machine-learning correction
+  -> strain estimate
 ```
 
-combined with minimal same-session calibration and a calibration-validated electrode fusion weight,
-rather than a black-box deep-learning architecture. Full methodology, findings, and the authoritative
-results ledger are in **[`research_diagnosis/REPORT.md`](research_diagnosis/REPORT.md)**.
+The learning model is **machine learning / AI**, but **not deep learning**. The main model is
+`HistGradientBoostingRegressor`; `ExtraTreesRegressor` is used as a stability check.
 
-Summary of what's been established so far (see REPORT.md for full detail and caveats):
-- The repo's original deep-learning pipeline had a few confirmed bugs (test-set leakage into Optuna,
-  minor window-boundary crossing) but none of them explain the catastrophic failure at unseen
-  temperatures — that failure reproduces even in a from-scratch paper-style model and in plain linear
-  regression baselines.
-- `B(T)` and `S(T)` (baseline resistance and strain-sensitivity, per electrode) are smooth, monotonic,
-  and well described by an exponential form — the physical model itself is sound.
-- A pure cross-temperature-extrapolated inverse is unreliable (electrode reliability doesn't transfer
-  across temperature), but **minimal in-session calibration (zero-balance + a few reference strain
-  points) recovers most of the achievable accuracy** and makes electrode selection stable — this is the
-  current core result.
-- Session-to-session (Experiment-to-Experiment) variation is a real, separate error source on top of
-  temperature; residual learning on top of the calibrated inverse is the planned next step (Phase H).
+The aim is not to win a model zoo comparison. The aim is to make an embedded resistive fiber sensor
+usable when temperature and measurement session change, so that temperature drift or setup drift is
+not misread as mechanical strain.
 
-## Dataset
+## Current Result
 
-5 CSV files collected at different temperatures (not included in this repository):
+Against the calibrated-physics baseline, evaluated on ds1-ds4 with both cross-session directions:
 
-| Column | Description |
-|--------|-------------|
-| `Electrode1_resistance` | Resistance of electrode 1 (Ω) |
-| `Electrode2_resistance` | Resistance of electrode 2 (Ω) |
-| `Temperature` | Ambient temperature (°C) |
-| `Strain` | Target — mechanical strain |
-| `Experiment` | Experiment ID |
+| Model | Mean RMSE improvement | Worst fold | 43 degC improvement | Stability |
+|---|---:|---:|---:|---|
+| HistGradientBoosting | 54.3% | 43.0% | 56.9% | KEEP in 4/4 seeds |
+| ExtraTrees | 53.4% | 41.2% | 52.4% | KEEP in 4/4 seeds |
+
+The ANN/CNN/LSTM/CWT exploration is no longer the active direction. The prior ANN-fusion report is
+kept in `to_know_how/` as background, but this cleaned project focuses on the tree-boosted method.
+
+## Files
+
+```
+src/physics_normalized_tree_boosting.py   # main method and evaluation
+results/tables/                           # result CSVs
+results/figures/                          # result figure
+REPORT.md                                 # concise research report
+to_know_how/                              # source paper, lab files, raw CSVs, original progress report
+```
+
+## Data
+
+The raw columns are:
+
+| Column | Meaning |
+|---|---|
+| `Temperature` | Ambient temperature, degC |
+| `Strain` | Target strain, in percent; full scale is 0.5% = 5000 microstrain |
+| `Electrode1_resistance` | Resistance of electrode 1 |
+| `Electrode2_resistance` | Resistance of electrode 2 |
+| `Experiment` | Measurement session id |
 | `Idx` | Time index |
 
-| Dataset | Samples | Temperature |
-|---------|---------|-------------|
-| dataset0 | 11,776 | ~21°C (excluded — single experiment, sanity-check only) |
-| dataset1 | 23,053 | ~33°C |
-| dataset2 | 23,227 | ~43°C |
-| dataset3 | 21,497 | ~52°C |
-| dataset4 | 23,077 | ~62°C |
+Primary evaluation uses `to_know_how/files/dataset1.csv` to `dataset4.csv`:
 
----
+| Dataset | Temperature | Sessions |
+|---|---:|---:|
+| dataset1 | 33 degC | 2 |
+| dataset2 | 43 degC | 2 |
+| dataset3 | 52 degC | 2 |
+| dataset4 | 62 degC | 2 |
 
-## Project structure
+`dataset0.csv` is the 21 degC reference-temperature file from the source material, but it is not part
+of the current cross-session evaluation.
 
-```
-research_diagnosis/
-├── REPORT.md              # Full findings, authoritative results ledger, decision log
-├── scripts/                # One script per diagnostic phase (B, C, D-fix, E, F, G, ...)
-├── tables/                 # CSV outputs — see REPORT.md's ledger for which are authoritative
-├── figures/                # PNG outputs referenced from REPORT.md
-└── logs/                   # Package versions for reproducibility
-
-data/            # Raw sensor CSVs (not committed)
-other/           # Original course/lab materials (assignment brief, mentor slides, etc.)
-```
-
----
-
-## Setup
+## Run
 
 ```bash
 python3.13 -m venv .venv
 source .venv/bin/activate
-pip install pandas numpy scipy scikit-learn matplotlib tensorflow keras
-# exact versions used are recorded in research_diagnosis/logs/package_versions.txt
+python3 -m pip install -r requirements.txt
+python3 src/physics_normalized_tree_boosting.py
 ```
 
-## Run
+Outputs are written to `results/tables/` and `results/figures/`.
 
-Each script under `research_diagnosis/scripts/` is self-contained and documents its own inputs/outputs
-in its docstring, e.g.:
+## Thesis Claim
 
-```bash
-cd /path/to/strain-prediction
-.venv/bin/python3 research_diagnosis/scripts/phase_g_calibration.py
-```
-
-See `research_diagnosis/REPORT.md` for what each phase script produces and how the results fit together.
+Within this dataset, a same-session physical calibration step turns raw resistance into a normalized
+strain-like signal. A tree-based ML readout trained on those normalized and causal time-series
+features improves cross-session strain prediction more reliably than the prior ANN correction, while
+remaining easier to train, explain, and deploy on small experimental data.

@@ -1,6 +1,5 @@
-# Folders (raw data and course materials — not part of the deliverable)
-data/
-other/
+# Local source archive / raw materials
+to_know_how/
 
 # macOS
 .DS_Store

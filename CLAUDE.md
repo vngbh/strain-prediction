@@ -1,91 +1,41 @@
-# CLAUDE.md
+# Project Notes
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+Current direction: **physics-normalized tree boosting** for resistive fiber strain prediction.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+The project should stay focused on one method:
 
-## 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-## 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-## 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
 ```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
+same-session calibration
+  -> physical normalization z_i = (R_i - B_i) / S_i
+  -> tree-based ML correction
+  -> strain prediction
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+## What To Keep
 
----
+- Main script: `src/physics_normalized_tree_boosting.py`
+- Main results: `results/tables/` and `results/figures/`
+- Main explanation: `REPORT.md`
+- Source/background/raw data archive: `to_know_how/`
 
-## 5. ML Experiment Integrity
+## What Not To Revive
 
-**Results must be reproducible and attributable. No cherry-picking.**
+Do not return to model shopping across ANN, CNN, LSTM, CWT, Optuna, ROCKET, residual learning, or
+old diagnostic scripts unless the user explicitly asks. Those were exploration/history.
 
-### Dataset
-- **Use only ds1–ds4.** ds0 is excluded (single experiment, likely a sample/demo dataset).
-- Never fit scaler on test data. Fit only on X_train, transform X_test separately.
-- `shuffle=False` is intentional — preserves temporal order and tests cross-experiment generalization.
+## Data Rules
 
-### Comparisons
-- **Change one thing at a time.** If you change features AND architecture simultaneously, you cannot attribute the improvement to either cause.
-- Every comparison table must specify: feature set, architecture, optimizer, LR, epochs/stopping strategy.
-- When a new model beats the baseline, run an ablation: new-arch + old-features vs old-arch + new-features.
+- `Strain` is in percent. Full scale is 0.5% strain = 5000 microstrain.
+- Use `dataset1.csv` to `dataset4.csv` for the main cross-session evaluation.
+- `dataset0.csv` is the 21 degC reference-temperature file, but it is not part of the current main
+  evaluation.
+- Do not fit preprocessing or model-selection choices on the test session.
+- Preserve temporal order; only use causal rolling features.
 
-### Overfitting checks
-- Always plot train loss vs val loss for every trained model.
-- Report both training R² and test R². A large gap = overfitting.
-- EarlyStopping does not guarantee no overfitting — it just stops early. Verify with the gap.
+## Reporting Rules
 
-### Reporting
-- Never report only the best run. Report mean ± std over at least 3 seeds if results vary.
-- If a model fails on one dataset (R² < 0), report it — don't hide it.
-- State the null hypothesis: "does this change actually help, or is it noise?"
-
----
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+- Describe the method as machine learning / AI, not deep learning.
+- The novelty is the method: physical calibration and normalization before small-data ML correction.
+- Do not claim a new algorithm.
+- Report mean improvement, worst fold, 43 degC improvement, and seed stability.
+- State the limitation clearly: one sensor dataset and a small number of independent session pairs.

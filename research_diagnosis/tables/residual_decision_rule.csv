@@ -1,4 +1,0 @@
-model,mean_pct_improvement,improves_in_both_directions_every_dataset,worst_case_pct_change,major_degradation,ds2_43C_pct_improvement,KEEP
-1_ridge_residual,-8.671596350443464,False,-131.03242995148915,True,66.98138107894185,False
-2_small_mlp_residual,23.04161004741575,False,-22.07176322076736,True,41.720570865908144,False
-3_small_gru_residual,25.436439981166128,False,-31.829382937631483,True,58.746920358138894,False

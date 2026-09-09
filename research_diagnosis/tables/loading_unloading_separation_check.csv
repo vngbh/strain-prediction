@@ -1,9 +1,0 @@
-dataset,electrode,S_loading_mean,S_unloading_mean,cis_overlap,needs_separate_S
-1,Electrode1_resistance,11412.019721623754,11336.876285703021,True,False
-1,Electrode2_resistance,38507.873167235084,38287.491649486874,True,False
-2,Electrode1_resistance,19087.473378526083,19534.42347806255,True,False
-2,Electrode2_resistance,61061.71527789026,63153.14534789337,False,True
-3,Electrode1_resistance,32873.10711891589,31533.885428470465,False,True
-3,Electrode2_resistance,93661.56790836003,91784.49158186693,True,False
-4,Electrode1_resistance,65869.36630381402,68590.01674633284,True,False
-4,Electrode2_resistance,136386.89956408666,134738.6411131021,True,False
