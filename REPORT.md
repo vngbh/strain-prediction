@@ -68,6 +68,21 @@ The baseline is the calibrated physical estimate before the tree-based correctio
 The result is not a deep-learning result. It is a small-data machine-learning result built on top of
 physical normalization.
 
+## Dynamic Feature Ablation
+
+The most important follow-up check is whether the time-series features actually matter. They do.
+
+| Feature set | HGB-only mean RMSE improvement | Worst fold | 43 degC improvement | KEEP |
+|---|---:|---:|---:|---|
+| Static normalized features only | 14.6% | -13.4% | 32.0% | No |
+| Local dynamics: derivatives + branch | 47.9% | 31.4% | 48.2% | Yes |
+| Full dynamics: local dynamics + rolling statistics | 54.3% | 43.0% | 56.9% | Yes |
+
+This ablation makes the method easier to defend. A static HGB readout on normalized strain-like
+signals is not sufficient: it improves on average but fails the worst-fold criterion. Adding causal
+dynamic features turns the model into a reliable cross-session readout, and rolling statistics
+provide the final improvement.
+
 ## Contribution
 
 The contribution is the full method, not a new tree algorithm:
@@ -77,6 +92,8 @@ The contribution is the full method, not a new tree algorithm:
 3. Learn only the remaining nonlinear correction from normalized deployable features.
 4. Demonstrate that tree-based ML is more stable than the previous ANN correction for this small
    experimental dataset.
+5. Show by ablation that causal dynamic features are necessary; the final model is not merely a
+   static tree applied to a calibrated signal.
 
 ## Positioning
 
@@ -131,4 +148,5 @@ Outputs:
 - `results/tables/tree_boosting_results.csv`
 - `results/tables/tree_boosting_per_direction_rmse.csv`
 - `results/tables/tree_boosting_decision_rule.csv`
+- `results/tables/dynamic_feature_ablation_summary.csv`
 - `results/figures/tree_boosting_vs_physics.png`

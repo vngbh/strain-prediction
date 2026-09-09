@@ -26,6 +26,7 @@ Outputs
 results/tables/tree_boosting_results.csv
 results/tables/tree_boosting_per_direction_rmse.csv
 results/tables/tree_boosting_decision_rule.csv
+results/tables/dynamic_feature_ablation_summary.csv
 results/figures/tree_boosting_vs_physics.png
 """
 
@@ -112,11 +113,26 @@ def rolling(series, window, op):
     return np.nan_to_num(out)
 
 
-def build_features(z1, z2, zf, temperature):
+FEATURE_SETS = ["static", "local_dynamic", "full_dynamic"]
+
+
+def build_features(z1, z2, zf, temperature, feature_set="full_dynamic"):
     dz1 = smoothed_deriv(z1)
     dz2 = smoothed_deriv(z2)
     dzf = smoothed_deriv(zf)
     branch = (dzf > 0).astype(float)
+
+    if feature_set == "static":
+        cols = [z1, z2, zf, temperature]
+        return np.column_stack(cols)
+
+    if feature_set == "local_dynamic":
+        cols = [z1, z2, zf, dz1, dz2, dzf, branch, temperature]
+        return np.column_stack(cols)
+
+    if feature_set != "full_dynamic":
+        raise ValueError(feature_set)
+
     cols = [z1, z2, zf, dz1, dz2, dzf, branch, temperature]
     for x in [z1, z2, zf, dzf]:
         for window in [21, 51, 101, 201]:
@@ -168,92 +184,99 @@ def main():
     examples = {}
 
     for seed in SEEDS:
-        for model_name in ["hgb", "extra_trees"]:
-            for held_out in DATASETS:
-                df_ds = raw[held_out]
-                exps = sorted(df_ds.Experiment.unique())
-                directions = [("A_to_B", exps[0], exps[1]), ("B_to_A", exps[1], exps[0])]
+        for feature_set in FEATURE_SETS:
+            for model_name in ["hgb", "extra_trees"]:
+                for held_out in DATASETS:
+                    df_ds = raw[held_out]
+                    exps = sorted(df_ds.Experiment.unique())
+                    directions = [("A_to_B", exps[0], exps[1]), ("B_to_A", exps[1], exps[0])]
 
-                for direction_name, calib_exp, test_exp in directions:
-                    df_calib = df_ds[df_ds.Experiment == calib_exp].reset_index(drop=True)
-                    df_test = df_ds[df_ds.Experiment == test_exp].reset_index(drop=True)
+                    for direction_name, calib_exp, test_exp in directions:
+                        df_calib = df_ds[df_ds.Experiment == calib_exp].reset_index(drop=True)
+                        df_test = df_ds[df_ds.Experiment == test_exp].reset_index(drop=True)
 
-                    strain_range = df_calib["Strain"].max() - df_calib["Strain"].min()
-                    ref_levels = list(np.linspace(df_calib["Strain"].min() + 0.05 * strain_range,
-                                                   df_calib["Strain"].max() - 0.05 * strain_range, 3))
-                    fit = calibrate_multi_point(df_calib, ref_levels)
-                    S1, B1 = fit[ELECTRODES[0]]
-                    S2, B2 = fit[ELECTRODES[1]]
+                        strain_range = df_calib["Strain"].max() - df_calib["Strain"].min()
+                        ref_levels = list(np.linspace(df_calib["Strain"].min() + 0.05 * strain_range,
+                                                       df_calib["Strain"].max() - 0.05 * strain_range, 3))
+                        fit = calibrate_multi_point(df_calib, ref_levels)
+                        S1, B1 = fit[ELECTRODES[0]]
+                        S2, B2 = fit[ELECTRODES[1]]
 
-                    z1_c = (df_calib[ELECTRODES[0]].values - B1) / S1
-                    z2_c = (df_calib[ELECTRODES[1]].values - B2) / S2
-                    z1_t = (df_test[ELECTRODES[0]].values - B1) / S1
-                    z2_t = (df_test[ELECTRODES[1]].values - B2) / S2
-                    y_calib = df_calib["Strain"].values
-                    y_test = df_test["Strain"].values
+                        z1_c = (df_calib[ELECTRODES[0]].values - B1) / S1
+                        z2_c = (df_calib[ELECTRODES[1]].values - B2) / S2
+                        z1_t = (df_test[ELECTRODES[0]].values - B1) / S1
+                        z2_t = (df_test[ELECTRODES[1]].values - B2) / S2
+                        y_calib = df_calib["Strain"].values
+                        y_test = df_test["Strain"].values
 
-                    _, troughs_c = detect_turning_points(y_calib)
-                    cyc_bounds_c = cycles_from_troughs(troughs_c, len(df_calib))
-                    val_mask = np.zeros(len(df_calib), dtype=bool)
-                    for lo, hi in cyc_bounds_c[max(1, len(cyc_bounds_c) // 2):]:
-                        val_mask[lo:hi] = True
-                    train_mask = ~val_mask
+                        _, troughs_c = detect_turning_points(y_calib)
+                        cyc_bounds_c = cycles_from_troughs(troughs_c, len(df_calib))
+                        val_mask = np.zeros(len(df_calib), dtype=bool)
+                        for lo, hi in cyc_bounds_c[max(1, len(cyc_bounds_c) // 2):]:
+                            val_mask[lo:hi] = True
+                        train_mask = ~val_mask
 
-                    w1 = select_fusion_weight(z1_c[val_mask], z2_c[val_mask], y_calib[val_mask])
-                    zf_c = w1 * z1_c + (1 - w1) * z2_c
-                    zf_t = w1 * z1_t + (1 - w1) * z2_t
-                    pred_physics = zf_t
-                    pred_physics_val = zf_c[val_mask]
+                        w1 = select_fusion_weight(z1_c[val_mask], z2_c[val_mask], y_calib[val_mask])
+                        zf_c = w1 * z1_c + (1 - w1) * z2_c
+                        zf_t = w1 * z1_t + (1 - w1) * z2_t
+                        pred_physics = zf_t
+                        pred_physics_val = zf_c[val_mask]
 
-                    X_calib = build_features(z1_c, z2_c, zf_c, df_calib["Temperature"].values)
-                    X_test = build_features(z1_t, z2_t, zf_t, df_test["Temperature"].values)
+                        X_calib = build_features(z1_c, z2_c, zf_c, df_calib["Temperature"].values, feature_set)
+                        X_test = build_features(z1_t, z2_t, zf_t, df_test["Temperature"].values, feature_set)
 
-                    model = make_model(model_name, seed)
-                    model.fit(X_calib[train_mask], y_calib[train_mask])
-                    pred_train = model.predict(X_calib[train_mask])
-                    pred_val = model.predict(X_calib[val_mask])
-                    pred_model = model.predict(X_test)
+                        model = make_model(model_name, seed)
+                        model.fit(X_calib[train_mask], y_calib[train_mask])
+                        pred_train = model.predict(X_calib[train_mask])
+                        pred_val = model.predict(X_calib[val_mask])
+                        pred_model = model.predict(X_test)
 
-                    best_alpha, best_rmse = 0.0, np.inf
-                    for alpha in np.linspace(0, 1, 21):
-                        blend = alpha * pred_val + (1 - alpha) * pred_physics_val
-                        rmse = np.sqrt(mean_squared_error(y_calib[val_mask], blend))
-                        if rmse < best_rmse:
-                            best_rmse = rmse
-                            best_alpha = alpha
-                    pred_blend = best_alpha * pred_model + (1 - best_alpha) * pred_physics
+                        best_alpha, best_rmse = 0.0, np.inf
+                        for alpha in np.linspace(0, 1, 21):
+                            blend = alpha * pred_val + (1 - alpha) * pred_physics_val
+                            rmse = np.sqrt(mean_squared_error(y_calib[val_mask], blend))
+                            if rmse < best_rmse:
+                                best_rmse = rmse
+                                best_alpha = alpha
+                        pred_blend = best_alpha * pred_model + (1 - best_alpha) * pred_physics
 
-                    train_r2 = r2_score(y_calib[train_mask], pred_train)
-                    val_r2 = r2_score(y_calib[val_mask], pred_val)
+                        train_r2 = r2_score(y_calib[train_mask], pred_train)
+                        val_r2 = r2_score(y_calib[val_mask], pred_val)
 
-                    for out_model, pred, alpha in [
-                        ("0_G3_physics_only", pred_physics, 0.0),
-                        (f"1_{model_name}_only", pred_model, 1.0),
-                        (f"2_{model_name}_blended", pred_blend, best_alpha),
-                    ]:
-                        rows.append({
-                            "seed": seed,
-                            "held_out": held_out,
-                            "temperature": TEMP_VAL[held_out],
-                            "kind": KIND[held_out],
-                            "direction": direction_name,
-                            "model": out_model,
-                            "alpha": alpha,
-                            "w1": w1,
-                            "train_r2": train_r2 if out_model != "0_G3_physics_only" else np.nan,
-                            "val_r2": val_r2 if out_model != "0_G3_physics_only" else np.nan,
-                            **metrics(y_test, pred),
-                        })
+                        for out_model, pred, alpha in [
+                            ("0_G3_physics_only", pred_physics, 0.0),
+                            (f"1_{model_name}_only", pred_model, 1.0),
+                            (f"2_{model_name}_blended", pred_blend, best_alpha),
+                        ]:
+                            rows.append({
+                                "seed": seed,
+                                "feature_set": feature_set,
+                                "held_out": held_out,
+                                "temperature": TEMP_VAL[held_out],
+                                "kind": KIND[held_out],
+                                "direction": direction_name,
+                                "model": out_model,
+                                "alpha": alpha,
+                                "w1": w1,
+                                "train_r2": train_r2 if out_model != "0_G3_physics_only" else np.nan,
+                                "val_r2": val_r2 if out_model != "0_G3_physics_only" else np.nan,
+                                **metrics(y_test, pred),
+                            })
 
-                    if seed == 0 and model_name == "hgb" and direction_name == "A_to_B":
-                        examples[held_out] = {"y": y_test, "g3": pred_physics, "hgb": pred_blend}
+                        if (
+                            seed == 0
+                            and feature_set == "full_dynamic"
+                            and model_name == "hgb"
+                            and direction_name == "A_to_B"
+                        ):
+                            examples[held_out] = {"y": y_test, "g3": pred_physics, "hgb": pred_blend}
 
-                print(f"seed={seed} {model_name} ds{held_out} done")
+                    print(f"seed={seed} feature_set={feature_set} {model_name} ds{held_out} done")
 
     results = pd.DataFrame(rows)
     results.to_csv(OUT_TAB / "tree_boosting_results.csv", index=False)
 
-    pivot = results.pivot_table(index=["seed", "held_out", "temperature", "kind", "direction"],
+    pivot = results.pivot_table(index=["seed", "feature_set", "held_out", "temperature", "kind", "direction"],
                                 columns="model", values="rmse")
     base = pivot["0_G3_physics_only"]
     for model in ["hgb", "extra_trees"]:
@@ -263,45 +286,62 @@ def main():
 
     decision_rows = []
     for seed in SEEDS:
-        sub = pivot.xs(seed, level="seed")
-        for model in ["hgb", "extra_trees"]:
-            for variant in ["only", "blended"]:
-                col = f"pct_improvement_{model}_{variant}"
-                mean_improve = sub[col].mean()
-                worst = sub[col].min()
-                every_dataset = all((sub.xs(ds, level="held_out")[col] > 0).all() for ds in DATASETS)
-                ds2_improve = sub.xs(2, level="held_out")[col].mean()
-                keep = every_dataset and worst >= -10 and ds2_improve > 0 and mean_improve >= 10
-                decision_rows.append({
-                    "seed": seed,
-                    "model": f"{model}_{variant}",
-                    "mean_pct_improvement": mean_improve,
-                    "worst_case_pct_change": worst,
-                    "every_dataset_improves_both_directions": every_dataset,
-                    "no_fold_degrades_over_10pct": worst >= -10,
-                    "ds2_43C_pct_improvement": ds2_improve,
-                    "KEEP": keep,
-                })
+        seed_sub = pivot.xs(seed, level="seed")
+        for feature_set in FEATURE_SETS:
+            sub = seed_sub.xs(feature_set, level="feature_set")
+            for model in ["hgb", "extra_trees"]:
+                for variant in ["only", "blended"]:
+                    col = f"pct_improvement_{model}_{variant}"
+                    mean_improve = sub[col].mean()
+                    worst = sub[col].min()
+                    every_dataset = all((sub.xs(ds, level="held_out")[col] > 0).all() for ds in DATASETS)
+                    ds2_improve = sub.xs(2, level="held_out")[col].mean()
+                    keep = every_dataset and worst >= -10 and ds2_improve > 0 and mean_improve >= 10
+                    decision_rows.append({
+                        "seed": seed,
+                        "feature_set": feature_set,
+                        "model": f"{model}_{variant}",
+                        "mean_pct_improvement": mean_improve,
+                        "worst_case_pct_change": worst,
+                        "every_dataset_improves_both_directions": every_dataset,
+                        "no_fold_degrades_over_10pct": worst >= -10,
+                        "ds2_43C_pct_improvement": ds2_improve,
+                        "KEEP": keep,
+                    })
     decisions = pd.DataFrame(decision_rows)
 
     summary = []
-    for model in decisions["model"].unique():
-        sub = decisions[decisions["model"] == model]
-        summary.append({
-            "seed": "ALL",
-            "model": model,
-            "mean_pct_improvement": sub["mean_pct_improvement"].mean(),
-            "worst_case_pct_change": sub["worst_case_pct_change"].min(),
-            "every_dataset_improves_both_directions": bool(sub["every_dataset_improves_both_directions"].all()),
-            "no_fold_degrades_over_10pct": bool(sub["no_fold_degrades_over_10pct"].all()),
-            "ds2_43C_pct_improvement": sub["ds2_43C_pct_improvement"].mean(),
-            "KEEP": bool(sub["KEEP"].all()),
-            "std_pct_improvement": sub["mean_pct_improvement"].std(ddof=1),
-            "KEEP_count": int(sub["KEEP"].sum()),
-            "n_seed": len(sub),
-        })
+    for feature_set in FEATURE_SETS:
+        for model in decisions["model"].unique():
+            sub = decisions[(decisions["feature_set"] == feature_set) & (decisions["model"] == model)]
+            summary.append({
+                "seed": "ALL",
+                "feature_set": feature_set,
+                "model": model,
+                "mean_pct_improvement": sub["mean_pct_improvement"].mean(),
+                "worst_case_pct_change": sub["worst_case_pct_change"].min(),
+                "every_dataset_improves_both_directions": bool(sub["every_dataset_improves_both_directions"].all()),
+                "no_fold_degrades_over_10pct": bool(sub["no_fold_degrades_over_10pct"].all()),
+                "ds2_43C_pct_improvement": sub["ds2_43C_pct_improvement"].mean(),
+                "KEEP": bool(sub["KEEP"].all()),
+                "std_pct_improvement": sub["mean_pct_improvement"].std(ddof=1),
+                "KEEP_count": int(sub["KEEP"].sum()),
+                "n_seed": len(sub),
+            })
     decisions = pd.concat([decisions, pd.DataFrame(summary)], ignore_index=True)
     decisions.to_csv(OUT_TAB / "tree_boosting_decision_rule.csv", index=False)
+
+    ablation = decisions[(decisions["seed"] == "ALL") & (decisions["model"].isin(["hgb_only", "extra_trees_only"]))]
+    ablation = ablation[[
+        "feature_set",
+        "model",
+        "mean_pct_improvement",
+        "worst_case_pct_change",
+        "ds2_43C_pct_improvement",
+        "KEEP",
+        "std_pct_improvement",
+    ]]
+    ablation.to_csv(OUT_TAB / "dynamic_feature_ablation_summary.csv", index=False)
 
     print("\nDecision:")
     print(decisions.to_string(index=False))

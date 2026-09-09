@@ -30,6 +30,21 @@ Against the calibrated-physics baseline, evaluated on ds1-ds4 with both cross-se
 The ANN/CNN/LSTM/CWT exploration is no longer the active direction. The prior ANN-fusion report is
 kept in `to_know_how/` as background, but this cleaned project focuses on the tree-boosted method.
 
+## Dynamic Feature Ablation
+
+The current method is not just a static tree model on `z = (R - B) / S`. A feature ablation confirms
+that causal time-series features are essential:
+
+| Feature set | HGB-only mean RMSE improvement | Worst fold | KEEP |
+|---|---:|---:|---|
+| Static normalized features only | 14.6% | -13.4% | No |
+| Local dynamics: derivatives + branch | 47.9% | 31.4% | Yes |
+| Full dynamics: local dynamics + rolling statistics | 54.3% | 43.0% | Yes |
+
+This is the key evidence for the thesis positioning: hysteresis/session effects are not solved by a
+purely static HGB readout. The tree model works because physical normalization is combined with
+causal dynamic descriptors.
+
 ## What Is New Here
 
 The broad idea "use ML to compensate temperature effects in a sensor" is not new. Similar work exists
