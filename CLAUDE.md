@@ -37,5 +37,11 @@ old diagnostic scripts unless the user explicitly asks. Those were exploration/h
 - Describe the method as machine learning / AI, not deep learning.
 - The novelty is the method: physical calibration and normalization before small-data ML correction.
 - Do not claim a new algorithm.
+- Do not claim that the broad idea "ML compensates temperature drift in sensors" is new. Treat it as
+  related work; the narrow claim is cross-session strain estimation for thermally drawn resistive
+  fiber sensors embedded in fiber-reinforced composites.
+- If asked "why not pure physics?", answer that physical calibration handles baseline and sensitivity;
+  ML is used only for the remaining nonlinear/history/session residual that is not identifiable as a
+  reliable closed-form model from this small dataset.
 - Report mean improvement, worst fold, 43 degC improvement, and seed stability.
 - State the limitation clearly: one sensor dataset and a small number of independent session pairs.

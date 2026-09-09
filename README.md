@@ -30,6 +30,20 @@ Against the calibrated-physics baseline, evaluated on ds1-ds4 with both cross-se
 The ANN/CNN/LSTM/CWT exploration is no longer the active direction. The prior ANN-fusion report is
 kept in `to_know_how/` as background, but this cleaned project focuses on the tree-boosted method.
 
+## What Is New Here
+
+The broad idea "use ML to compensate temperature effects in a sensor" is not new. Similar work exists
+for other sensor families, including piezoresistive pressure sensors.
+
+The narrower thesis claim is:
+
+> Physics-normalized tree-based learning for cross-session strain estimation in thermally drawn
+> resistive fiber sensors embedded in fiber-reinforced composites.
+
+So the novelty is not a new tree algorithm. It is the combination of same-session physical
+calibration, physically normalized features, causal time-series descriptors, and small-data tree ML
+for this specific embedded fiber-strain-sensing problem.
+
 ## Files
 
 ```
@@ -82,3 +96,7 @@ Within this dataset, a same-session physical calibration step turns raw resistan
 strain-like signal. A tree-based ML readout trained on those normalized and causal time-series
 features improves cross-session strain prediction more reliably than the prior ANN correction, while
 remaining easier to train, explain, and deploy on small experimental data.
+
+The claim should stay narrow: this is an application-method thesis for one sensor dataset, not a
+general proof that the method works for all resistive sensors, all composites, or arbitrary
+temperatures.

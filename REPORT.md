@@ -78,12 +78,36 @@ The contribution is the full method, not a new tree algorithm:
 4. Demonstrate that tree-based ML is more stable than the previous ANN correction for this small
    experimental dataset.
 
+## Positioning
+
+This thesis should not claim that "machine learning temperature compensation for sensors" is new.
+That broad idea already exists, including for other piezoresistive sensor families.
+
+The defensible claim is narrower:
+
+> A physics-normalized tree-based learning framework for cross-session strain estimation in
+> thermally drawn resistive fiber sensors embedded in fiber-reinforced composites.
+
+The model does not make raw resistance itself stable. Raw resistance remains temperature- and
+session-dependent because that is the measured material response. The method changes the inference
+problem: first remove the physically interpretable baseline and sensitivity terms (`B`, `S`), then let
+small-data ML learn the residual structure that is difficult to write as a reliable closed-form
+formula from this dataset alone.
+
+This is why the work is still an AI/ML thesis, but not a deep-learning thesis. The AI part is the
+tree-based nonlinear readout operating after physical normalization; the physics part defines the
+coordinate system in which that readout becomes stable.
+
 ## Application Value
 
 This matters for structural health monitoring of fiber-reinforced composites. If the sensor is used
 outside one controlled laboratory session, temperature and setup drift can be misread as mechanical
 strain. The proposed method reduces that failure mode while keeping the pipeline lightweight enough
 for practical calibration and deployment.
+
+In practical terms, improving cross-temperature/session strain prediction helps prevent false strain
+alarms, missed strain events, and repeated recalibration when the same embedded sensor is used under
+different ambient or mounting conditions.
 
 ## Limitations
 
@@ -93,6 +117,8 @@ for practical calibration and deployment.
 - The method assumes a short same-session calibration is available.
 - Generalization to other fiber materials, electrode compositions, geometries, load rates, and
   long-term aging requires new experiments.
+- The thesis should be framed as application-method integration and validation, not as a new
+  algorithmic contribution.
 
 ## Reproduce
 
