@@ -63,6 +63,7 @@ The full flow is:
 raw resistance
 -> physical calibration
 -> normalized strain-like signal
+-> causal dynamic features
 -> tree-based machine learning correction
 -> final strain prediction
 ```
@@ -86,6 +87,31 @@ In simple words:
 ```text
 Physics makes the signal easier to understand.
 Machine learning corrects what physics does not fully explain.
+```
+
+## Why Dynamic Features Are Important
+
+The model should not look at each data point as an isolated point.
+
+For this sensor, the recent signal history matters. The same resistance-like value can mean different
+things during loading and unloading. This is called hysteresis.
+
+So the project adds causal dynamic features, such as:
+
+- whether the signal is increasing or decreasing,
+- the loading/unloading branch,
+- recent rolling average,
+- recent rolling standard deviation,
+- recent rolling minimum and maximum.
+
+These features are not new measurements. They are calculated from the existing signal. They give the
+machine learning model useful physical context about recent behavior.
+
+In simple words:
+
+```text
+Static features tell the model where the signal is now.
+Dynamic features tell the model how the signal got there.
 ```
 
 ## Why Tree-Based Machine Learning
@@ -119,6 +145,18 @@ Worst fold improvement: 43.0%
 43 degC improvement: 56.9%
 Seed stability: KEEP in 4/4 seeds
 ```
+
+The dynamic feature ablation shows why the final model is stronger:
+
+| Feature set | Mean RMSE improvement | Worst fold | Result |
+|---|---:|---:|---|
+| Static normalized features only | 14.6% | -13.4% | Fails robustness check |
+| Local dynamics: derivatives + branch | 47.9% | 31.4% | Passes |
+| Full dynamics: local dynamics + rolling statistics | 54.3% | 43.0% | Best |
+
+This means physical normalization alone is not enough. A static tree model improves the average
+result, but it can still fail on one session. Adding dynamic features makes the model much more
+reliable.
 
 The test R2 values range from about:
 
@@ -172,8 +210,9 @@ The main message is:
 
 > Raw resistance is not stable enough for strain prediction under different temperatures and
 > measurement sessions. By first using physical calibration and then applying a small tree-based
-> machine learning correction, strain can be predicted more accurately and more reliably.
+> machine learning correction with causal dynamic features, strain can be predicted more accurately
+> and more reliably.
 
 This is not a new deep learning algorithm. The contribution is the combination of physical
-normalization and small-data machine learning for this specific embedded fiber sensor problem.
-
+normalization, dynamic feature engineering, and small-data machine learning for this specific
+embedded fiber sensor problem.
