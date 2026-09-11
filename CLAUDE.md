@@ -61,7 +61,8 @@ old diagnostic scripts unless the user explicitly asks. Those were exploration/h
   not call either the directions or groups independent replicates.
 - If asked "why not pure physics?", cite the matched 125 s result: frozen HGB
   improves physics by 37.6% on average and in every direction. Smoothing alone
-  worsens performance; Ridge and raw+zero-offset HGB both fail.
+  worsens performance; Ridge and raw+low-strain-offset HGB both fail. Removing
+  `T` from the raw comparators does not rescue them.
 - All final ablations must cite `frozen_protocol_ablations_summary.csv`, not the
   historical 54% within-temperature development table.
 - Say "requires no future samples" or "online-compatible", not "zero delay".
@@ -71,3 +72,6 @@ old diagnostic scripts unless the user explicitly asks. Those were exploration/h
   as independent stability evidence.
 - State that method selection and validation use the same finite corpus. LOTO is
   rigorous internal evidence, not untouched external confirmation.
+- Describe the executable audits as finding no leakage in the tested access
+  paths and boundaries. Never turn that into the absolute claim "there is no
+  leakage."

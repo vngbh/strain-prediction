@@ -23,8 +23,8 @@ session:
 | Method | Mean RMSE | Mean R2 | Mean improvement | Worst fold |
 |---|---:|---:|---:|---:|
 | Frozen causal HGB + 125 s calibration | **0.0484% strain** | **0.859** | **37.6%** | **+0.5%** |
-| Frozen raw-resistance HGB with `T` | 0.1144% strain | 0.220 | -78.6% | -409.1% |
-| Raw HGB + target zero-offset + `T` | 0.0797% strain | 0.638 | -10.5% | -84.6% |
+| Frozen raw-resistance HGB, no `T` | 0.1156% strain | 0.203 | -80.8% | -414.7% |
+| Raw HGB + target low-strain offset, no `T` | 0.0821% strain | 0.631 | -16.1% | -82.0% |
 
 The normalized method improves the matched physical baseline in all eight
 directional evaluations from four temperature groups. All groups share one
@@ -40,13 +40,16 @@ internal leave-one-temperature-out evidence, not external validation.
 - The final causal, no-`T`, direct HGB is the only tested variant that improves
   every direction.
 - Raw HGB works within a temperature but fails when the held-out temperature
-  changes. Among the tested variants, physical normalization is therefore the
-  essential step for reliable transfer.
+  changes. Among the tested variants, offset-and-sensitivity normalization
+  provides the best mean transfer performance and the fewest failed directions.
 - HGB is frozen before target calibration and receives zero target-condition
   labels for model training. Target labels are used only during the known 125 s
   proof-load calibration event.
-- Prefix-causality, test-label access, and post-calibration label-access audits
-  all pass with exactly zero numerical prediction difference.
+- Prefix-causality, absent-test-label, truncated-calibration, altered-future,
+  and shared-frozen-model audits all pass with exactly zero numerical
+  prediction difference. No leakage was detected in these tested data-access
+  paths and boundaries; this is not a proof that every possible leakage path is
+  absent.
 
 ## Scope
 

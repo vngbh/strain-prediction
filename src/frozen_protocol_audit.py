@@ -6,6 +6,8 @@ corpus, so these checks strengthen internal validity but are not an untouched
 external confirmation.
 """
 
+import hashlib
+import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -95,10 +97,28 @@ VARIANTS = [
         "windows": ROLLING_WINDOWS,
     },
     {
-        "name": "raw_zero_offset_with_T_direct_HGB",
+        "name": "raw_no_T_direct_HGB",
+        "representation": "raw",
+        "derivative": "causal",
+        "include_temperature": False,
+        "target": "direct",
+        "model": "hgb",
+        "windows": ROLLING_WINDOWS,
+    },
+    {
+        "name": "raw_low_strain_offset_with_T_direct_HGB",
         "representation": "zero_offset",
         "derivative": "causal",
         "include_temperature": True,
+        "target": "direct",
+        "model": "hgb",
+        "windows": ROLLING_WINDOWS,
+    },
+    {
+        "name": "raw_low_strain_offset_no_T_direct_HGB",
+        "representation": "zero_offset",
+        "derivative": "causal",
+        "include_temperature": False,
         "target": "direct",
         "model": "hgb",
         "windows": ROLLING_WINDOWS,
@@ -226,7 +246,7 @@ def build_features(signals, temperature, derivative_mode, include_temperature, w
     return np.column_stack(columns)
 
 
-def zero_offset_calibration(df):
+def low_strain_offset_calibration(df):
     prefix = calibration_prefix(df)
     strain = prefix["Strain"].to_numpy()
     mask = strain <= strain.min() + 0.02
@@ -248,11 +268,11 @@ def session_signals(df, representation, calibration_source=None):
         weight = fusion_weight_from_points(fit, points)
         return normalize(df, fit, weight), info
     if representation == "zero_offset":
-        baselines = zero_offset_calibration(source)
+        baselines = low_strain_offset_calibration(source)
         x1 = df[ELECTRODES[0]].to_numpy() - baselines[ELECTRODES[0]]
         x2 = df[ELECTRODES[1]].to_numpy() - baselines[ELECTRODES[1]]
         info = {
-            "calibration_mode": "fixed_125s_zero_window",
+            "calibration_mode": "fixed_125s_low_strain_window",
             "calibration_rows_used": int(
                 (calibration_prefix(source)["Strain"] <= calibration_prefix(source)["Strain"].min() + 0.02).sum()
             ),
@@ -303,8 +323,13 @@ def fit_source_model(raw, held_out, variant):
     return model
 
 
-def evaluate_fold(raw, held_out, direction, calibration_experiment, test_experiment, variant):
-    model = fit_source_model(raw, held_out, variant)
+def model_fingerprint(model):
+    if model is None:
+        return "not_applicable"
+    return hashlib.sha256(pickle.dumps(model)).hexdigest()
+
+
+def evaluate_fold(raw, held_out, direction, calibration_experiment, test_experiment, variant, model):
     calibration = raw[held_out][raw[held_out].Experiment == calibration_experiment].reset_index(drop=True)
     test = raw[held_out][raw[held_out].Experiment == test_experiment].reset_index(drop=True)
 
@@ -320,12 +345,14 @@ def evaluate_fold(raw, held_out, direction, calibration_experiment, test_experim
         variant["include_temperature"],
         variant["windows"],
     )
+    fingerprint_before = model_fingerprint(model)
     if variant["model"] == "smoothing":
         prediction = rolling(signals[2], 21, "mean")
     else:
         prediction = model.predict(features)
         if variant["target"] == "residual":
             prediction = physics_prediction + prediction
+    fingerprint_after = model_fingerprint(model)
 
     result = score(test["Strain"].to_numpy(), prediction)
     row = {
@@ -338,6 +365,8 @@ def evaluate_fold(raw, held_out, direction, calibration_experiment, test_experim
         "calibration_mode": calibration_info["calibration_mode"],
         "calibration_rows_used": calibration_info["calibration_rows_used"],
         "calibration_duration_seconds": calibration_info["calibration_duration_seconds"],
+        "source_model_fingerprint": fingerprint_before,
+        "source_model_unchanged": fingerprint_before == fingerprint_after,
         "physics_rmse": physics_score["rmse"],
         "physics_r2": physics_score["r2"],
         **result,
@@ -353,6 +382,8 @@ def evaluate_fold(raw, held_out, direction, calibration_experiment, test_experim
         "prediction": prediction,
         "physics_prediction": physics_prediction,
         "physics_info": physics_info,
+        "model_fingerprint_before": fingerprint_before,
+        "model_fingerprint_after": fingerprint_after,
     }
     return row, artifacts
 
@@ -361,6 +392,7 @@ def run_variants(raw, variants):
     rows, final_artifacts = [], {}
     for variant in variants:
         for held_out in DATASETS:
+            model = fit_source_model(raw, held_out, variant)
             experiments = sorted(raw[held_out].Experiment.unique())
             directions = [
                 ("A_to_B", experiments[0], experiments[1]),
@@ -374,6 +406,7 @@ def run_variants(raw, variants):
                     calibration_experiment,
                     test_experiment,
                     variant,
+                    model,
                 )
                 rows.append(row)
                 if variant["name"] == "final_physics_causal_no_T_direct_HGB":
@@ -387,9 +420,13 @@ def summarize(frame):
         rows.append(
             {
                 "variant": variant,
+                "mean_physics_rmse": group["physics_rmse"].mean(),
                 "mean_rmse": group["rmse"].mean(),
                 "mean_r2": group["r2"].mean(),
                 "mean_pct_improvement": group["pct_improvement"].mean(),
+                "ratio_of_mean_rmse_reduction": 100
+                * (group["physics_rmse"].mean() - group["rmse"].mean())
+                / group["physics_rmse"].mean(),
                 "worst_fold_pct_improvement": group["pct_improvement"].min(),
                 "temperature_groups_improved_both_directions": sum(
                     (part["pct_improvement"] > 0).all() for _, part in group.groupby("held_out_dataset")
@@ -402,9 +439,16 @@ def summarize(frame):
 
 def causality_and_label_audit(final_artifacts):
     rows = []
+    shared_model_pass = {}
+    for dataset in DATASETS:
+        artifacts = [artifact for (key_dataset, _), artifact in final_artifacts.items() if key_dataset == dataset]
+        shared_model_pass[dataset] = (
+            len({id(artifact["model"]) for artifact in artifacts}) == 1
+            and len({artifact["model_fingerprint_before"] for artifact in artifacts}) == 1
+        )
+
     for (dataset, direction), artifact in final_artifacts.items():
         test = artifact["test"]
-        signals = artifact["signals"]
         full_features = artifact["features"]
         model = artifact["model"]
         feature_differences, prediction_differences = [], []
@@ -423,12 +467,12 @@ def causality_and_label_audit(final_artifacts):
                 abs(float(model.predict(prefix_features[-1:])[0]) - float(model.predict(full_features[stop : stop + 1])[0]))
             )
 
-        modified_test = test.copy()
-        modified_test["Strain"] = np.random.default_rng(123).permutation(modified_test["Strain"].to_numpy())
-        modified_signals, _ = session_signals(modified_test, "physics", artifact["calibration"])
+        # Inference must run when the forbidden test label column is absent.
+        test_without_labels = test.drop(columns=["Strain"])
+        modified_signals, _ = session_signals(test_without_labels, "physics", artifact["calibration"])
         rebuilt_features = build_features(
             modified_signals,
-            modified_test["Temperature"].to_numpy(),
+            test_without_labels["Temperature"].to_numpy(),
             "causal",
             False,
             ROLLING_WINDOWS,
@@ -437,13 +481,9 @@ def causality_and_label_audit(final_artifacts):
             np.abs(model.predict(rebuilt_features) - artifact["prediction"])
         )
 
-        # Labels after the permitted fixed-prefix calibration must not influence
-        # B, S, fusion, features, or predictions.
-        calibration = artifact["calibration"].copy()
-        tail_start = len(calibration_prefix(calibration))
-        tail = calibration.loc[tail_start:, "Strain"].to_numpy().copy()
-        calibration.loc[tail_start:, "Strain"] = np.random.default_rng(456).permutation(tail)
-        modified_signals, _ = session_signals(test, "physics", calibration)
+        # Removing the forbidden calibration tail entirely must change nothing.
+        truncated_calibration = calibration_prefix(artifact["calibration"])
+        modified_signals, _ = session_signals(test, "physics", truncated_calibration)
         modified_features = build_features(
             modified_signals,
             test["Temperature"].to_numpy(),
@@ -454,6 +494,41 @@ def causality_and_label_audit(final_artifacts):
         calibration_tail_difference = np.max(
             np.abs(model.predict(modified_features) - artifact["prediction"])
         )
+
+        # Strongly alter all observations after t. Predictions through t must
+        # remain unchanged when every feature is truly causal.
+        future_feature_differences, future_prediction_differences = [], []
+        for stop in [250, len(test) // 3, 2 * len(test) // 3]:
+            altered = test.copy()
+            future = np.arange(stop + 1, len(altered))
+            for electrode in ELECTRODES:
+                scale = max(float(altered[electrode].std()), 1.0)
+                altered.loc[future, electrode] += scale * np.linspace(10.0, 20.0, len(future))
+            altered.loc[future, "Temperature"] += 100.0
+            altered_signals, _ = session_signals(altered, "physics", artifact["calibration"])
+            altered_features = build_features(
+                altered_signals,
+                altered["Temperature"].to_numpy(),
+                "causal",
+                False,
+                ROLLING_WINDOWS,
+            )
+            future_feature_differences.append(
+                np.max(np.abs(altered_features[: stop + 1] - full_features[: stop + 1]))
+            )
+            future_prediction_differences.append(
+                np.max(
+                    np.abs(
+                        model.predict(altered_features[: stop + 1])
+                        - artifact["prediction"][: stop + 1]
+                    )
+                )
+            )
+
+        frozen_model_pass = (
+            artifact["model_fingerprint_before"] == artifact["model_fingerprint_after"]
+            and shared_model_pass[dataset]
+        )
         rows.append(
             {
                 "dataset": dataset,
@@ -463,9 +538,14 @@ def causality_and_label_audit(final_artifacts):
                 "max_prefix_prediction_difference": max(prediction_differences),
                 "max_test_label_prediction_difference": label_prediction_difference,
                 "max_post_calibration_label_prediction_difference": calibration_tail_difference,
+                "max_future_observation_feature_difference": max(future_feature_differences),
+                "max_future_observation_prediction_difference": max(future_prediction_differences),
                 "causality_pass": max(feature_differences) < 1e-12 and max(prediction_differences) < 1e-12,
                 "test_label_access_pass": label_prediction_difference < 1e-12,
                 "calibration_scope_pass": calibration_tail_difference < 1e-12,
+                "future_observation_pass": max(future_feature_differences) < 1e-12
+                and max(future_prediction_differences) < 1e-12,
+                "frozen_shared_source_model_pass": frozen_model_pass,
             }
         )
     return pd.DataFrame(rows)
@@ -538,7 +618,9 @@ def plot_protocol_results(per_fold, final_artifacts):
         "Ridge",
         "Smoothing only",
         "Raw HGB + T",
-        "Raw + zero offset + T",
+        "Raw HGB, no T",
+        "Raw + low-strain offset + T",
+        "Raw + low-strain offset, no T",
     ]
     figure, axes = plt.subplots(1, 2, figsize=(14, 5))
     values = summary.loc[order, "mean_pct_improvement"]
@@ -624,6 +706,8 @@ def main():
     assert audit["causality_pass"].all()
     assert audit["test_label_access_pass"].all()
     assert audit["calibration_scope_pass"].all()
+    assert audit["future_observation_pass"].all()
+    assert audit["frozen_shared_source_model_pass"].all()
 
     regions = error_regions(final_artifacts)
     regions.to_csv(OUT_TAB / "frozen_protocol_error_regions.csv", index=False)

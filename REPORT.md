@@ -26,10 +26,10 @@ R_i(t) = B_i + S_i * epsilon(t) + residual_i(t)
 z_i(t) = (R_i(t) - B_i) / S_i
 ```
 
-`B_i` is the zero-strain baseline and `S_i` is strain sensitivity. They are
+`B_i` is the fitted low-strain intercept and `S_i` is strain sensitivity. They are
 estimated from four reference-level windows inside a fixed 125 s calibration
 prefix. The levels are zero plus 5%, 50%, and 95% of the observed calibration
-strain range. The zero window is `strain <= minimum + 0.02%`; the other windows
+strain range. The low-strain window is `strain <= minimum + 0.02%`; the other windows
 use `+/-0.03%`. The two normalized electrode estimates are fused using a weight
 selected from these same calibration aggregates.
 
@@ -77,14 +77,24 @@ measurement during calibration; it is not a calibration-free startup.
 |---|---:|---:|---:|---:|---:|
 | Physics only, matched 125 s calibration | 0.0881% | - | baseline | - | - |
 | **Frozen HGB: physics-normalized, causal, no `T`** | **0.0484%** | **0.859** | **37.6%** | **0.5%** | **8/8** |
-| Frozen raw-resistance HGB with `T` | 0.1144% | 0.220 | -78.6% | -409.1% | 2/8 |
-| Frozen raw HGB + target zero-offset + `T` | 0.0797% | 0.638 | -10.5% | -84.6% | 3/8 |
+| Frozen raw-resistance HGB, no `T` | 0.1156% | 0.203 | -80.8% | -414.7% | 2/8 |
+| Frozen raw HGB + target low-strain offset, no `T` | 0.0821% | 0.631 | -16.1% | -82.0% | 3/8 |
 
 `0.0484%` strain is approximately `484 microstrain`, or 9.7% of the 0.5%
 full-scale strain. The weakest-prediction fold is 43 degC A-to-B, with
 `R2 = 0.430` and `RMSE = 0.112%` (about 1120 microstrain, 22.3% full scale).
 The smallest improvement is only 0.5% at 33 degC B-to-A; therefore “8/8” is a
 consistency description, not evidence of a large margin in every direction.
+
+The reported 37.6% is the arithmetic mean of the eight per-direction relative
+improvements. The ratio of aggregate mean RMSEs is a different summary:
+`1 - 0.0484 / 0.0881 = 45.1%`. Both are valid, but they answer different
+questions; this report uses the former as the primary consistency-aware metric.
+The distinction is especially important for raw HGB with a low-strain offset
+and no `T`: its ratio-of-means reduction is `+6.9%`, but its mean
+per-direction improvement is `-16.1%` and only 3/8 directions improve. A few
+high-error folds dominate the aggregate RMSE, so this comparator is not a
+reliable transfer method despite the favorable ratio of means.
 
 ## Critical Ablations
 
@@ -100,10 +110,14 @@ calibration, and opposite-session testing.
 | Ridge on the same features | 11.0% | -108.7% | Fails two temperature groups |
 | Causal smoothing only | -6.7% | -13.7% | Improves no direction |
 | Raw HGB with `T` | -78.6% | -409.1% | Fails all four temperature groups |
-| Raw HGB + target zero-offset + `T` | -10.5% | -84.6% | Offset-only calibration remains insufficient |
+| Raw HGB without `T` | -80.8% | -414.7% | Removing `T` does not rescue raw transfer |
+| Raw HGB + low-strain offset with `T` | -10.5% | -84.6% | Offset-only calibration remains insufficient |
+| Raw HGB + low-strain offset without `T` | -16.1% | -82.0% | Same conclusion after isolating `T` |
 
-The zero-offset comparator receives the same 125 s target calibration event but
-uses only its no-load window. It is the requested stronger raw baseline.
+The low-strain-offset comparator receives the same 125 s target calibration
+event but uses only its lowest-strain window. It is the requested stronger raw
+baseline. Because force was not recorded, this window is not claimed to prove
+a mechanically unloaded state.
 Providing all four reference levels as an offset-and-scale transform would, in
 substance, be the proposed physical normalization. The result supports
 **calibrated transfer**, not label-free transfer.
@@ -128,14 +142,22 @@ associated with reliable transfer in this corpus.
 
 ## Leakage And Error Audits
 
-For all eight directions, three executable checks return exactly zero numerical
-difference:
+For all eight directions, five executable checks pass, with exactly zero
+numerical difference wherever a numerical comparison applies:
 
 - features/predictions at time `t` are identical when computed from the full
   session or only the prefix ending at `t`;
-- permuting every test-session strain label does not change predictions;
-- permuting every calibration-session strain label after 125 s does not change
-  calibration or predictions.
+- inference runs after the test-session `Strain` column is removed entirely;
+- deleting the calibration-session tail after 125 s does not change calibration
+  or predictions;
+- strongly altering both resistance channels and temperature after time `t`
+  does not change any feature or prediction through `t`;
+- A-to-B and B-to-A at one held-out temperature reuse the same fitted HGB object,
+  whose serialized fingerprint is unchanged by target calibration or inference.
+
+These audits found no leakage in the tested data-access paths and boundaries.
+They should not be interpreted as an absolute proof that no untested leakage
+path can exist.
 
 The original peak-detected “first cycle” selector failed the third audit because
 its centered peak detector could inspect samples after the nominal boundary. It
@@ -156,10 +178,10 @@ result:
 
 > Within this existing one-sensor dataset, a globally trained causal HGB model
 > can transfer across the tested temperatures and sessions after a short,
-> physically interpretable four-level calibration. Physical normalization is
-> essential for reliable cross-temperature transfer among the tested variants,
-> while dynamic nonlinear learning improves over the matched physical baseline
-> in every evaluated direction.
+> physically interpretable four-level calibration. Among the tested variants,
+> offset-and-sensitivity normalization gives the best mean cross-temperature
+> transfer and the fewest failed directions, while dynamic nonlinear learning
+> improves over the matched physical baseline in every evaluated direction.
 
 The method is machine learning, not deep learning. Physics supplies a stable
 coordinate system; HGB learns the remaining nonlinear and history-dependent

@@ -20,7 +20,7 @@ First, a short calibration changes resistance into a strain-like coordinate:
 z = (R - B) / S
 ```
 
-`B` is resistance near zero strain and `S` is sensor sensitivity. They are
+`B` is a fitted low-strain intercept and `S` is sensor sensitivity. They are
 measured from four reference-level windows during a fixed 125-second proof-load
 calibration. Reference strain must be observed during this event.
 
@@ -73,8 +73,11 @@ therefore promising, but it is not equally accurate in every condition.
   final frozen tree deliberately omits it.
 - A frozen model trained on raw resistance, even with temperature as an input,
   fails across temperatures: mean `R2 = 0.220`, with only 2 of 8 tests improved.
-- Giving raw HGB the same calibration event for zero-offset correction is still
-  insufficient: mean `R2 = 0.638`, and only 3 of 8 directions improve.
+- Removing `T` does not rescue raw HGB: mean `R2 = 0.203`, and only 2 of 8
+  directions improve.
+- Giving raw HGB the same calibration event for a low-strain offset, without
+  `T`, is still insufficient: mean `R2 = 0.631`, and only 3 of 8 directions
+  improve.
 - The physically normalized frozen model reaches mean `R2 = 0.859` and improves
   all 8 tests.
 
@@ -95,13 +98,17 @@ The current data are not enough to claim industrial readiness or performance on
 another sensor. The study shows what can be supported by this one existing
 sensor dataset; no additional measurements are assumed.
 
+The executable audits found no leakage in the data-access paths and boundaries
+they tested. This is strong internal evidence, not an absolute proof covering
+every conceivable implementation error.
+
 ## Main Claim
 
 > In this dataset, a globally trained causal tree model can transfer across the
 > tested temperatures and sessions after a short physical calibration. Physics
-> normalization is essential for reliable cross-temperature transfer among the
-> tested variants, and nonlinear dynamic machine learning improves the matched
-> physical baseline in every evaluated direction.
+> normalization gives the best mean transfer and the fewest failed directions
+> among the tested variants, and nonlinear dynamic machine learning improves the
+> matched physical baseline in every evaluated direction.
 
 This is machine learning, not deep learning. The contribution is the complete
 physics-plus-ML method and its careful validation, not a new tree algorithm.
