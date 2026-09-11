@@ -1,0 +1,9 @@
+dataset,temperature,direction,max_prefix_feature_difference,max_prefix_prediction_difference,max_test_label_prediction_difference,max_post_calibration_label_prediction_difference,causality_pass,test_label_access_pass,calibration_scope_pass
+1,33,A_to_B,0.0,0.0,0.0,0.0,True,True,True
+1,33,B_to_A,0.0,0.0,0.0,0.0,True,True,True
+2,43,A_to_B,0.0,0.0,0.0,0.0,True,True,True
+2,43,B_to_A,0.0,0.0,0.0,0.0,True,True,True
+3,52,A_to_B,0.0,0.0,0.0,0.0,True,True,True
+3,52,B_to_A,0.0,0.0,0.0,0.0,True,True,True
+4,62,A_to_B,0.0,0.0,0.0,0.0,True,True,True
+4,62,B_to_A,0.0,0.0,0.0,0.0,True,True,True

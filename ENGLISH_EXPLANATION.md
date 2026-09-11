@@ -1,218 +1,107 @@
 # Simple English Explanation
 
-## What This Project Is About
+## The Problem
 
-This project predicts **strain**, which means how much a composite material is being stretched.
+This project predicts strain, which means how much a composite structure is
+stretched. The sensor contains two electrical-resistance channels.
 
-The sensor has two resistive electrodes embedded inside a fiber-reinforced composite material. When
-the material is stretched, the electrical resistance changes. In a simple situation, we could say:
+Stretching changes resistance, but temperature, measurement setup, sensor
+history, and loading direction also change it. Therefore, the same resistance
+can represent different strain values in different tests. An AI model that
+memorizes raw resistance from one temperature may fail at another temperature.
 
-```text
-resistance changes -> strain changes
-```
+## The Solution
 
-But in the real experiment, resistance changes for more than one reason.
+The method gives physics and machine learning different jobs.
 
-It changes because of:
-
-- mechanical strain,
-- temperature,
-- measurement session differences,
-- sensor drift,
-- hysteresis between loading and unloading.
-
-So the same resistance value can mean different strain values under different temperatures or
-sessions. This is the main problem.
-
-## Why Raw Resistance Is Not Enough
-
-If we train an AI model directly on raw resistance, the model may learn the wrong relationship.
-
-For example, the model may think:
-
-```text
-higher resistance = higher strain
-```
-
-But higher resistance may also come from higher temperature or session drift. This makes raw
-resistance unstable for strain prediction when the temperature or session changes.
-
-## The Main Idea
-
-The project first uses a simple physical calibration:
+First, a short calibration changes resistance into a strain-like coordinate:
 
 ```text
 z = (R - B) / S
 ```
 
-where:
+`B` is resistance near zero strain and `S` is sensor sensitivity. They are
+measured from four reference-level windows during a fixed 125-second proof-load
+calibration. Reference strain must be observed during this event.
 
-- `R` is the measured resistance,
-- `B` is the baseline resistance when strain is almost zero,
-- `S` is the sensitivity of the sensor,
-- `z` is a normalized strain-like signal.
-
-This step does not make the sensor perfect. But it removes the biggest resistance offset and
-sensitivity changes caused by temperature and session differences.
-
-After this physical normalization, machine learning is used to learn the remaining errors.
-
-The full flow is:
-
-```text
-raw resistance
--> physical calibration
--> normalized strain-like signal
--> causal dynamic features
--> tree-based machine learning correction
--> final strain prediction
-```
-
-## Why Use Machine Learning After Physics
-
-The physical model handles the main part of the problem: baseline and sensitivity.
-
-However, some effects are still difficult to write as a simple formula from this small dataset:
-
-- hysteresis,
-- low-strain nonlinearity,
-- drift,
-- session-dependent behavior.
-
-Machine learning is used only for this remaining part. It does not replace physics. It improves the
-prediction after physics has already organized the data into a better form.
+Second, one globally trained `HistGradientBoostingRegressor` uses the normalized
+signals and their recent history. Its features describe whether the signal is
+rising or falling and its recent average, variation, minimum, and maximum. All
+features use only the present and past, so the final method needs no future
+samples. Its trailing smoother still introduces about one second of group lag.
 
 In simple words:
 
 ```text
-Physics makes the signal easier to understand.
-Machine learning corrects what physics does not fully explain.
+Physics removes the large temperature/session shift.
+Machine learning interprets the smaller nonlinear and history effects.
 ```
 
-## Why Dynamic Features Are Important
+## A Fair Deployment Test
 
-The model should not look at each data point as an isolated point.
+For each test temperature, both sessions at that temperature are removed from
+AI training. The AI learns from the other three temperatures and is then
+frozen. At the new temperature, only the four-level physical calibration is
+performed. The frozen AI never trains on target-temperature strain data.
 
-For this sensor, the recent signal history matters. The same resistance-like value can mean different
-things during loading and unloading. This is called hysteresis.
+The experiment is repeated in both session directions at 33, 43, 52, and
+62 degC. This makes eight directional tests from four temperature groups. They
+all use one sensor/specimen and are not independent sensor replicates.
 
-So the project adds causal dynamic features, such as:
+## Accuracy
 
-- whether the signal is increasing or decreasing,
-- the loading/unloading branch,
-- recent rolling average,
-- recent rolling standard deviation,
-- recent rolling minimum and maximum.
-
-These features are not new measurements. They are calculated from the existing signal. They give the
-machine learning model useful physical context about recent behavior.
-
-In simple words:
+With fixed 125-second calibration, the final model achieves:
 
 ```text
-Static features tell the model where the signal is now.
-Dynamic features tell the model how the signal got there.
+Mean RMSE:                 0.0484% strain (about 484 microstrain)
+Mean R2:                   0.859
+Improvement over physics:  37.6% on average
+Smallest improvement:      0.5%
+Directional tests helped:  8 out of 8
 ```
 
-## Why Tree-Based Machine Learning
+The weakest test is 43 degC A-to-B, with `R2 = 0.430` and `RMSE = 0.112%`
+strain. The method is
+therefore promising, but it is not equally accurate in every condition.
 
-This project uses tree-based machine learning, mainly `HistGradientBoostingRegressor`, with
-`ExtraTreesRegressor` as a stability check.
+## What Proves Each Part Matters
 
-This is machine learning / AI, but it is **not deep learning**.
+- Smoothing alone makes the average result 6.7% worse.
+- Linear Ridge regression fails badly in its worst test (-108.7%).
+- A nonlinear tree model with causal features improves all tests.
+- Adding temperature makes one unseen-temperature direction 50.5% worse, so the
+  final frozen tree deliberately omits it.
+- A frozen model trained on raw resistance, even with temperature as an input,
+  fails across temperatures: mean `R2 = 0.220`, with only 2 of 8 tests improved.
+- Giving raw HGB the same calibration event for zero-offset correction is still
+  insufficient: mean `R2 = 0.638`, and only 3 of 8 directions improve.
+- The physically normalized frozen model reaches mean `R2 = 0.859` and improves
+  all 8 tests.
 
-Tree-based models are suitable here because:
+This is the strongest evidence that physical normalization is useful for
+transfer, while machine learning contributes more than simple smoothing.
 
-- the experimental dataset is small,
-- there are only a few independent measurement sessions,
-- deep learning models can overfit easily,
-- tree models are easier to train and explain,
-- the physical normalization already does much of the hard work.
+## Application
 
-So the model is simple, but not weak. It is chosen because it fits the data situation better than a
-large neural network.
+The sensor is embedded inside fiber-reinforced composite material. Such
+materials are used in aircraft, vehicles, wind-turbine blades, sports equipment,
+and civil structures.
 
-## Current Prediction Performance
+Reliable strain estimation can support structural health monitoring. It can
+reduce false alarms caused by heating, missed strain events hidden by drift,
+and the need to retrain an AI model whenever the operating temperature changes.
 
-Compared with the calibrated physical baseline, the tree-based model improves prediction accuracy
-across all tested temperature/session directions.
+The current data are not enough to claim industrial readiness or performance on
+another sensor. The study shows what can be supported by this one existing
+sensor dataset; no additional measurements are assumed.
 
-Main result:
+## Main Claim
 
-```text
-Mean RMSE improvement: 54.3%
-Worst fold improvement: 43.0%
-43 degC improvement: 56.9%
-Seed stability: KEEP in 4/4 seeds
-```
+> In this dataset, a globally trained causal tree model can transfer across the
+> tested temperatures and sessions after a short physical calibration. Physics
+> normalization is essential for reliable cross-temperature transfer among the
+> tested variants, and nonlinear dynamic machine learning improves the matched
+> physical baseline in every evaluated direction.
 
-The dynamic feature ablation shows why the final model is stronger:
-
-| Feature set | Mean RMSE improvement | Worst fold | Result |
-|---|---:|---:|---|
-| Static normalized features only | 14.6% | -13.4% | Fails robustness check |
-| Local dynamics: derivatives + branch | 47.9% | 31.4% | Passes |
-| Full dynamics: local dynamics + rolling statistics | 54.3% | 43.0% | Best |
-
-This means physical normalization alone is not enough. A static tree model improves the average
-result, but it can still fail on one session. Adding dynamic features makes the model much more
-reliable.
-
-The test R2 values range from about:
-
-```text
-0.697 to 0.980
-```
-
-The RMSE ranges from about:
-
-```text
-0.0207% strain to 0.0814% strain
-```
-
-Because full scale is 0.5% strain, this corresponds to approximately:
-
-```text
-207 microstrain to 814 microstrain
-```
-
-The hardest case is still the 43 degC A-to-B session test. This should be reported honestly. But the
-model still improves over the baseline even in that difficult case.
-
-## Why This Is Useful
-
-This type of sensor can be embedded inside fiber-reinforced composite materials. These materials are
-used in many engineering applications, such as:
-
-- aircraft structures,
-- automotive parts,
-- wind turbine blades,
-- sports equipment,
-- civil engineering structures,
-- smart composite materials.
-
-In real use, the structure may experience different temperatures and different measurement
-conditions. If the sensor cannot separate temperature effects from real mechanical strain, it may
-give wrong information.
-
-For example:
-
-- it may report strain when the structure is only heating up,
-- it may miss real strain because temperature drift hides it,
-- it may require recalibration too often,
-- it may give unreliable structural health monitoring signals.
-
-This project helps make the sensor more reliable when temperature and session conditions change.
-
-## Main Research Message
-
-The main message is:
-
-> Raw resistance is not stable enough for strain prediction under different temperatures and
-> measurement sessions. By first using physical calibration and then applying a small tree-based
-> machine learning correction with causal dynamic features, strain can be predicted more accurately
-> and more reliably.
-
-This is not a new deep learning algorithm. The contribution is the combination of physical
-normalization, dynamic feature engineering, and small-data machine learning for this specific
-embedded fiber sensor problem.
+This is machine learning, not deep learning. The contribution is the complete
+physics-plus-ML method and its careful validation, not a new tree algorithm.

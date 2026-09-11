@@ -1,6 +1,9 @@
 # Local source archive / raw materials
 to_know_how/
 
+# Generated/local progress-report documents
+docs/
+
 # macOS
 .DS_Store
 
