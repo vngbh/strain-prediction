@@ -247,6 +247,15 @@ doi:10.1016/j.compositesb.2019.01.090; Mu et al. 2023,
 doi:10.3390/polym15163379), so the phenomenon is not claimed as new; its relevance here is that the default
 calibration window falls on the first cycle.
 
+**Pre-registered preconditioning test.** Excluding the first cycle from
+calibration (calibrating on the 125 s after it, with sources treated the same
+way) was tested against a pre-registered rule frozen in git before running. It
+did not meet the criterion: mean HGB RMSE was 0.0461% versus 0.0484% for the
+repository convention, a 4.7% mean per-direction improvement, with 5/8
+directions improved and the worst direction 30.0% worse. Mean physics-only RMSE
+increased slightly. The first-cycle observation therefore does not translate
+into a supported calibration-protocol change in this corpus.
+
 ## Leakage And Error Audits
 
 For all eight directions, five executable checks pass, with exactly zero

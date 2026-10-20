@@ -197,6 +197,14 @@ def _first_cycle():
             int((timed > 0).sum()), len(rows)]
 
 
+def _preconditioning():
+    rows = _probe("preconditioning_rmse.csv")
+    hgb = rows.pivot_table(index=["temperature", "direction"], columns="protocol", values="hgb_rmse")
+    ratio = hgb["P1"] / hgb["P0"]
+    return [hgb["P1"].mean(), hgb["P0"].mean(), 100 * (1 - ratio).mean(), int((ratio < 1).sum()),
+            100 * (ratio.max() - 1)]
+
+
 def _median_rmse_across_positions():
     groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
     return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
@@ -261,6 +269,9 @@ CLAIMS = [
            rf"{NUM}% relative to the median of cycles 3–7\. A faster initial decline held in\s+{NUM}/{NUM}\. "
            rf"Adding a linear time term to window regressions reduces the first-higher\s+agreement to {NUM}/{NUM}",
      _first_cycle),
+    (SENS, rf"mean HGB RMSE was {NUM}% versus {NUM}% for the\s+repository convention, a {NUM}% mean per-direction "
+           rf"improvement, with {NUM}/8\s+directions improved and the worst direction {NUM}% worse",
+     _preconditioning),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",

@@ -101,3 +101,36 @@ eight directions are dependent.
 Before any scoring, replace every label after 250 s in each calibration
 session with corrupted values and require identical `c1`, calibration
 parameters, and predictions for P1, P2, P3. If this fails, stop and report.
+
+## Result (appended after running; the sections above are unchanged since commit 303ccdb)
+
+Run on 2026-10-20 after the freeze. Outputs:
+`research/probes/out/preconditioning_rmse.csv`,
+`preconditioning_calibration_content.csv`, `preconditioning_p0d_rows.csv`.
+Independently recomputed by Codex (round 8).
+
+| Comparison | Mean RMSE: P1 vs 0.95 x Q | Mean per-direction improvement `I_Q` | Wins | Worst deterioration |
+|---|---|---:|---:|---:|
+| P1 vs P0 | 0.04610 vs 0.04598 (fail) | 4.68% (fail) | 5/8 (fail) | +30.0% (43 degC B_to_A) |
+| P1 vs P2 | 0.04610 vs 0.04567 (fail) | 4.84% (fail) | 7/8 | +11.3% |
+
+**Decision: "Decision criterion unmet."**
+
+Mean physics-only RMSE increased slightly (0.08815 to 0.08858). Higher
+first-cycle apparent resistance-reference-strain slopes were observed under
+several estimators in this corpus. This P1 calibration convention did not
+satisfy the pre-registered adoption criterion; the analysis does not establish
+a conditioning mechanism or generalization beyond this specimen and loading
+program. Secondary protocols (P3 mean 0.0460, P1t 0.0478) are reported only and
+do not change the decision.
+
+Deviations from the pre-registration, disclosed:
+
+1. The frozen leakage gate compared c1, calibration parameters, and fusion
+   weights, but not predictions as registered. A post-hoc prediction-level
+   check (`probes/probe_preconditioning_posthoc_leak.py`, written after the
+   run) found a maximum prediction difference of exactly 0.
+2. P0d had no explicit output rows in the frozen script; they are written
+   post hoc and are identical to P0 by construction.
+3. Git shows the freeze preceded the committed outputs; it cannot prove that
+   no earlier execution occurred.

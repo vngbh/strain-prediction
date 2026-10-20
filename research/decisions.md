@@ -26,6 +26,11 @@ history.
   a descriptive calibration finding (16/16 under branch-balanced cycle bins);
   mechanism and novelty explicitly not claimed. Candidate literature still to
   be checked against full text.
+- Update (same day): pre-registered preconditioning test (frozen in commit
+  `303ccdb` before running) gave "Decision criterion unmet" (P1 vs P0: 4.7%
+  mean per-direction improvement, 5/8, worst +30%). Excluding the first cycle
+  is not adopted as a calibration protocol. Two compliance gaps disclosed and
+  closed post hoc (prediction-level leakage check: exact 0; P0d rows).
 
 ## 2026-10-20: Split the single script into the `src/strain/` package
 
