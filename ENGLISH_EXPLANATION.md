@@ -66,6 +66,10 @@ therefore promising, but it is not equally accurate in every condition.
 
 ## What Proves Each Part Matters
 
+- Physical normalization without any dynamic features helps on average by only
+  5.1% and makes its worst test 91.0% worse. Adding causal signal history raises
+  the mean improvement to 37.6% and makes even the weakest direction 0.5%
+  better. Physics and dynamics therefore do different jobs.
 - Smoothing alone makes the average result 6.7% worse.
 - Linear Ridge regression fails badly in its worst test (-108.7%).
 - A nonlinear tree model with causal features improves all tests.
@@ -82,7 +86,8 @@ therefore promising, but it is not equally accurate in every condition.
   all 8 tests.
 
 This is the strongest evidence that physical normalization is useful for
-transfer, while machine learning contributes more than simple smoothing.
+transfer, while causal nonlinear dynamic learning contributes more than either
+static normalized learning or simple smoothing.
 
 ## Application
 

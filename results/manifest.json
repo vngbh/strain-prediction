@@ -1,0 +1,31 @@
+{
+  "note": "Output hashes are the regression reference for tools/check_results.py. PNG bytes additionally depend on platform and fonts.",
+  "python": "3.13.11",
+  "platform": "Darwin-arm64",
+  "matplotlib_backend": "macosx",
+  "packages": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1"
+  },
+  "raw_data_sha256": {
+    "dataset1.csv": "81d4011337152c16128dae3fde45a8fcf8d4b83ada8c52f4a0c49cb3424b29ea",
+    "dataset2.csv": "4ea77e04c21ea93980bdff2cba0b4a73cef8392cfdb55049513729ed4b39039a",
+    "dataset3.csv": "aec2a927dd5d1183b586ffa3c6533d256eb297fe8bca1bec76c474e89d6d9299",
+    "dataset4.csv": "911cdc5040b57409802e8d027029fce3af395c3633a19129f0b808436f77c2d5"
+  },
+  "outputs_sha256": {
+    "tables/causality_label_access_audit.csv": "8f4e3ee0a39150909cda0f43752b01a9aeb9488714ca71e2360e506e600bb60f",
+    "tables/frozen_protocol_ablations_per_fold.csv": "3200c17bab21e995f2d0dd2daedd5106daf458b277e03118854dd074d22fd4a7",
+    "tables/frozen_protocol_ablations_summary.csv": "17c21c4e12ee0a27bbc4ed049f7bb34c4a3e1913b47af611d012d31450c8215a",
+    "tables/frozen_protocol_by_temperature.csv": "ca6c4222c26662cdfe6fdd7545622f45d3221130b3a58a052af204be503d91c8",
+    "tables/frozen_protocol_edge_vs_interior.csv": "7b1824b7f763b4e5a1c2a5dccf0eb7a6bf712ef274e61368632305340916a8f9",
+    "tables/frozen_protocol_error_regions.csv": "e64c7c53bd2fade18971553ddd94453228d96f29ddb8fa6f7efb940c274c2024",
+    "tables/frozen_window_sensitivity_per_fold.csv": "c5e1eadcd285f9920a27278426274fa4be072c457db95d80419f66cebe57eb1c",
+    "tables/frozen_window_sensitivity_summary.csv": "034e83aade25a37fcebe99501a578b39eddfaa9a9a30773ce0930aff23029d92",
+    "figures/frozen_best_worst_predictions.png": "7fcf5fb3701ed3a1efa51d7a13c07a22819d3a157ee9fc72569f3bc064bc1bba",
+    "figures/frozen_protocol_audit.png": "4144dc7df1b491bf2fc5900ead6edf462619a99ef14def05579eda837982ece2"
+  }
+}
