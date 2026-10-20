@@ -17,6 +17,10 @@ history.
   file): no general calibration-window rule (kill criterion met for that
   sub-claim); fusion is degenerate (electrode 2 only); the program control
   explains about half of the dynamic gain but does not match it.
+- Update (same day): calibration-diversity training rejected by a
+  prespecified check (a source-selected single calibration offset is better,
+  G5). REPORT now carries a Calibration Sensitivity section (bookkeeping,
+  window position, static vs dynamic over positions) on this branch only.
 
 ## 2026-10-20: Split the single script into the `src/strain/` package
 

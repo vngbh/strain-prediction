@@ -99,9 +99,33 @@ Agreed wording:
   program control, not every program-tracking explanation, and does not prove
   a sensor-memory mechanism."
 
-Still open: a static-HGB window sweep (to separate the dynamic contribution
-from HGB-vs-physics in F1), and source sessions calibrated at shifted windows
-(matched source/target calibration shifts).
+### Round 2 of analyses (2026-10-20, branch `direction/calibration-transfer-limits`)
+
+| ID | Analysis | Result | Script |
+|---|---|---|---|
+| G1 | Static vs dynamic HGB over all target calibration positions | Dynamic lower RMSE at every position in 7 directions, 96/109 in 33 degC B_to_A. Mean of per-direction medians: physics 0.0879, static 0.0717, dynamic 0.0496. Written into REPORT. | `probes/probe_calibration_shift.py` |
+| G2 | Calibration-diversity training (sources normalized at 0/240/480/720 s, stacked) | Mean of medians 0.0448 vs 0.0496; spread (std, IQR) NOT reduced; 43 degC A_to_B worse; 33 degC A_to_B wins only 51/98 positions. | same |
+| G3 | Row-count control (0 s data replicated 4x) | 0.0498: identical-row duplication does not reproduce G2. | `probes/probe_diversity_volume_control.py` |
+| G4 | Source calibrated at the same offset as the target window | 0.0453 vs 0.0486 (0 s-trained) vs 0.0452 (diverse) over offsets 0/240/480/720. | `probes/probe_calibration_shift.py` |
+| G5 | Decisive check (prespecified with Codex): diversity vs ONE source offset chosen by inner LOTO on source temperatures only, row-matched | Inner validation chose 480 s in all 4 outer folds. Primary metric: selected 0.0436 vs diverse 0.0449 (+2.8% for diversity), under both repository and fixed-150-iteration policies (early stopping never triggered; n_iter 150). **Kill rule met: diversity-specific claim dropped.** | `probes/probe_diversity_vs_selected_offset.py` |
+| G6 | The selected 480 s model at the protocol's 0 s target window | Mean 0.0468 vs 0.0484; better in 5/8 directions, clearly worse at 33 degC A_to_B (0.0541 vs 0.0389). | same (+ shift CSV) |
+
+What survives:
+
+- G1 (dynamic over static, across calibration positions) is a finding and is
+  in REPORT.
+- Calibration diversity is NOT a method contribution (G5).
+- Observation, not a claim: the source calibration convention (when source
+  sessions are calibrated) is a design variable. Choosing it by source-only
+  inner validation lowered the mean of per-direction medians over target
+  positions from 0.0496 to 0.0436 (better median in 7/8 directions), but its
+  advantage at the 0 s protocol window is mixed (G6). The candidate offsets
+  were chosen after inspecting F1/F2 on this corpus.
+
+Still open: whether the convention effect is "match the source calibration
+timing to the deployment timing distribution" (testable by evaluating 0
+s-trained vs 480 s-trained models separately on early vs late target windows),
+and a Codex review of G5/G6 wording.
 
 ## Kill Criteria
 
