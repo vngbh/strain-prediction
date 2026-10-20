@@ -106,3 +106,36 @@ Retrospective corpus; dependent cycles; four temperature groups nested with
 sessions; the oracle state in A uses labels; the bound in B is optimistic
 (model known, white noise, smoothing horizon). Passing is necessary, not
 sufficient.
+
+## Result (appended after running; the sections above are unchanged since commit 052b2d0)
+
+Outputs: `research/probes/out/latent_gates_gates.csv`,
+`latent_gates_cycle_coefficients.csv`. 69 cycles kept (6-9 per session), none
+dropped. Codex (round s5) confirmed the working tree matched 052b2d0 and the
+verdicts match the CSVs before its usage limit stopped the audit.
+
+| Group | A1 (raw coupling) | A2 (residual coupling) | Gate B smoothing bound (% strain) |
+|---|---|---|---|
+| 33 degC | pass (0.418 vs best control 0.538) | pass | 0.0065 (pass) |
+| 43 degC | fail (2.027 vs 1.669) | pass | 0.0121 (fail) |
+| 52 degC | pass (0.414 vs 0.485) | pass | 0.0109 (fail) |
+| 62 degC | fail (1.019 vs 0.989) | pass | 0.0109 (fail) |
+
+**Decision: both gates fail; the shared-state method direction stops on this
+corpus.**
+
+Interpretation (Claude, checked by a post-hoc calculation; Codex could not
+review it before its usage limit):
+
+- Electrode-1 residual changes predicted electrode-2 residual changes beyond
+  time/program controls in all four groups (A2), but the rank-one coupling did
+  not transfer in raw form at 43 and 62 degC (A1).
+- Residuals of the two electrodes from a branch-wise linear response are
+  strongly correlated (rho 0.928-0.982) and autocorrelated (lag-1 0.64-0.97).
+  The correlation HELPS separability under the stated model: recomputing the
+  bound with rho set to 0 raises it to 0.0103-0.0195 % strain (post-hoc).
+  Gate B therefore fails despite this help. An earlier draft claim that the
+  correlation means "little independent information" was wrong and is
+  withdrawn, as is a link to E6 and the fusion weight.
+- Strong positive autocorrelation violates the white-noise assumption; the
+  bound is likely optimistic for a slow state, but this was not quantified.

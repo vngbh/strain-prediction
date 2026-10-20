@@ -5,6 +5,16 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-20: Latent-state direction stopped by pre-registered gates
+
+- Branch `direction/latent-state-model`. Gates frozen in commit `052b2d0`
+  after four Codex review rounds. Gate A (transferable coupling) failed at 43
+  and 62 degC in raw form, passed as residual coupling everywhere; Gate B
+  (strain/state separability bound) passed only at 33 degC.
+- Decision: stop the shared-state method direction on this corpus.
+- dataset0 remains sealed and unused.
+- Status: rejected.
+
 ## 2026-10-20: Recommended research direction (branch `direction/calibration-transfer-limits`)
 
 - Decision: proposed reframing to "calibration transfer limits" plus "static vs
