@@ -8,7 +8,7 @@ Frozen LOTO with the repository calibration (fixed 125 s prefix), feature sets s
 If static + t approaches dynamic, much of the "history" gain is explainable by elapsed time
 (drift trajectory or loading program), not by sensor memory. Elapsed time is available online.
 
-Usage: .venv/bin/python -I research/probes/probe_memory_vs_time.py <repo root>
+Usage: .venv/bin/python -I research/probes/probe_memory_vs_time.py <repo root> [out csv]
 """
 import sys
 
@@ -38,6 +38,7 @@ def hook(include_dynamics, add_time):
 
 
 proto.session_signals = signals_with_time
+frames = []
 for label, dyn, add_t in [("static", False, False), ("static + elapsed time", False, True),
                           ("dynamic (final)", True, False), ("dynamic + elapsed time", True, True)]:
     proto.build_features = hook(dyn, add_t)
@@ -46,3 +47,8 @@ for label, dyn, add_t in [("static", False, False), ("static + elapsed time", Fa
     print(f"{label:<24} meanRMSE={s.mean_rmse:.4f} meanImp={s.mean_pct_improvement:5.1f}% "
           f"worst={s.worst_fold_pct_improvement:6.1f}% dirs={s.directions_improved}/8  "
           f"per-fold={frame.pct_improvement.round(1).tolist()}")
+    frames.append(frame.assign(feature_set=label))
+if len(sys.argv) > 2:
+    import pandas as pd
+
+    pd.concat(frames, ignore_index=True).to_csv(sys.argv[2], index=False)

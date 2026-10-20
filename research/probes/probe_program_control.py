@@ -11,7 +11,7 @@ No rolling amplitude statistics. Nothing uses Strain or future samples. DEADBAND
 Prespecified kill rule for "detailed history demonstrates transferable sensor memory":
   program-control mean RMSE within 5% of dynamic HGB AND per-direction RMSE within 10% in >= 7/8.
 
-Usage: .venv/bin/python -I research/probes/probe_program_control.py <repo root>
+Usage: .venv/bin/python -I research/probes/probe_program_control.py <repo root> [out csv]
 """
 import sys
 
@@ -68,6 +68,10 @@ for label, build in [("dynamic (final)", original_build), ("program control", pr
     print(f"{label:<18} meanRMSE={s.mean_rmse:.4f} meanImp={s.mean_pct_improvement:5.1f}% "
           f"worst={s.worst_fold_pct_improvement:6.1f}% dirs={s.directions_improved}/8")
 proto.build_features = original_build
+if len(sys.argv) > 2:
+    import pandas as pd
+
+    pd.concat([f.assign(feature_set=k) for k, f in results.items()], ignore_index=True).to_csv(sys.argv[2], index=False)
 
 dyn, prog = results["dynamic (final)"].rmse.to_numpy(), results["program control"].rmse.to_numpy()
 mean_ratio = prog.mean() / dyn.mean()

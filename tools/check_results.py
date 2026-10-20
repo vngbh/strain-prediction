@@ -154,6 +154,7 @@ def _weakest_fold():
 
 
 ABL = "frozen_protocol_ablations_summary.csv"
+SENS = "REPORT.md#Calibration Sensitivity"  # locator scoped to one section
 WIN = "frozen_window_sensitivity_summary.csv"
 
 
@@ -175,9 +176,15 @@ def _bookkeeping():
 
 
 def _weak_fold_windows(name, better):
-    """[positions where `better` holds in the weakest direction, positions in it]."""
+    """[positions where `better` holds in the weakest direction, positions in it].
+
+    Also enforces the surrounding prose: exactly 8 directions, and the other 7 win at every
+    position. If not, returns impossible values so the claim fails.
+    """
     rows = _probe(name)
     shares = rows.groupby(["temperature", "direction"]).apply(lambda d: better(d).mean())
+    if len(shares) != 8 or (shares == 1.0).sum() != 7:
+        return [-1, -1]
     weak = rows.set_index(["temperature", "direction"]).loc[shares.idxmin()]
     return [int(better(weak).sum()), len(weak)]
 
@@ -234,13 +241,13 @@ CLAIMS = [
     ("REPORT.md", rf"\| \*\*Up to 201 samples\*\* \| \*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
      _row(WIN, "history_to_201", "mean_pct_improvement", "worst_fold_pct_improvement")),
     # REPORT.md calibration sensitivity (research/probes/out)
-    ("REPORT.md", rf"measured\s+mean strain instead gives a mean per-direction improvement of {NUM}%, a worst\s+"
+    (SENS, rf"measured\s+mean strain instead gives a mean per-direction improvement of {NUM}%, a worst\s+"
                   rf"direction of {NUM}%, and {NUM}/8 improved directions", _bookkeeping),
-    ("REPORT.md", rf"sampled calibration positions in seven directions and {NUM}/{NUM} positions in the\s+eighth",
+    (SENS, rf"the frozen dynamic HGB outperformed matched physics across all\s+sampled calibration positions in seven directions and {NUM}/{NUM} positions in the\s+eighth",
      lambda: _weak_fold_windows("window_distribution.csv", lambda d: d.pct_improvement > 0)),
-    ("REPORT.md", rf"at every position in\s+seven directions and {NUM}/{NUM} positions in the eighth",
+    (SENS, rf"the\s+dynamic HGB had lower RMSE than the static normalized HGB at every position in\s+seven directions and {NUM}/{NUM} positions in the eighth",
      lambda: _weak_fold_windows("calibration_shift.csv", lambda d: d.dynamic_rmse < d.static_rmse)),
-    ("REPORT.md", rf"the median RMSE across positions was {NUM}% for physics, {NUM}% for static\s+HGB, "
+    (SENS, rf"the median RMSE across positions was {NUM}% for physics, {NUM}% for static\s+HGB, "
                   rf"and {NUM}% for dynamic HGB", _median_rmse_across_positions),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
@@ -305,7 +312,15 @@ def _matches(text, value, expected):
 def gate_docs():
     failures = []
     for doc, pattern, source in CLAIMS:
-        hits = re.findall(pattern, (ROOT / doc).read_text())
+        path, _, section = doc.partition("#")
+        text = (ROOT / path).read_text()
+        if section:
+            heading = f"## {section}\n"
+            if text.count(heading) != 1:
+                failures.append(f"{doc}: section heading found {text.count(heading)} times")
+                continue
+            text = text.split(heading, 1)[1].split("\n## ", 1)[0]
+        hits = re.findall(pattern, text)
         if len(hits) != 1:
             failures.append(f"{doc}: locator matched {len(hits)} times (need exactly 1): {pattern}")
             continue

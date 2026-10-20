@@ -194,8 +194,8 @@ associated with reliable transfer in this corpus.
 
 ## Calibration Sensitivity
 
-These analyses keep the frozen protocol and change only how or when the target
-calibration is taken. Scripts and outputs are in `research/probes/`; the
+These analyses retain source-only fitting and frozen target evaluation while
+varying calibration conventions, window positions, or feature sets. Scripts and outputs are in `research/probes/`; the
 direction note is
 `research/directions/2026-10-20-calibration-transfer-limits.md`.
 
@@ -214,7 +214,7 @@ eighth. This demonstrates a broadly persistent relative advantage within this
 corpus, without establishing improved absolute accuracy at later positions.
 Later windows were associated with higher HGB RMSE in most directions but lower
 RMSE in one; window position, strain coverage, and low-band strain are strongly
-dependent within sessions, so no general calibration-selection rule was
+dependent within most sessions, so no general calibration-selection rule was
 established.
 
 **Static versus dynamic across windows.** Over the same window positions, the
