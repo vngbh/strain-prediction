@@ -95,3 +95,29 @@ consistency requirement, not a significance test (electrodes share sessions).
   nonlinearity also alters harmonic content, so these are not decisive.
 - Strain-equivalent RMS of the shift alone, `RMS(eps(t) - eps(t - tau*))`.
   Not an error floor and not an attributable share of HGB error.
+
+## Result (appended after running; the sections above are unchanged since commit b82b769)
+
+Output: `research/probes/out/reference_lag_per_electrode_session.csv`.
+Audited by Codex (round l4): source identical to b82b769; verdict reproduced.
+
+**Primary: insufficient coverage (13/16 valid; minimum 14).** The three
+unresolved cases (62 degC: experiment 9 electrode 1, experiment 10 both
+electrodes) have unique minima at the +5.0 s grid edge with RMS still
+decreasing (Codex recomputation for those three only).
+
+Descriptive (no decision role): resolved offsets were positive (1.84-4.61 s,
+all intervals excluding 0); available cross-fitted collapse ratios were
+0.10-0.33. These do not identify a delay mechanism or quantify explained
+prediction error.
+
+Withdrawn readings (Claude, corrected by Codex):
+
+- Negative implied delays at the 3rd and 5th harmonics are NOT evidence against
+  a pure delay: a synthetic exact 3 s delay with the same triangular period,
+  branch asymmetry, and the frozen detrending yields 0.85, -0.35, -5.05 s.
+- Temperature trend: available-electrode means are 2.62, 3.86, 3.70, 4.61 s at
+  33, 43, 52, 62 degC, with 62 degC resting on one resolved electrode-session;
+  no trend is claimed.
+- Shift-only RMS (0.017-0.039 % strain) versus HGB RMSE (0.0484 %) is a scale
+  comparison only, not an error floor or an explained share.
