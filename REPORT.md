@@ -256,6 +256,26 @@ directions improved and the worst direction 30.0% worse. Mean physics-only RMSE
 increased slightly. The first-cycle observation therefore does not translate
 into a supported calibration-protocol change in this corpus.
 
+## Reference Alignment (direction branch)
+
+The original pre-registered apparent-alignment analysis (v1, ±5 s grid)
+returned insufficient coverage: 13/16 electrode-sessions were valid, below the
+required 14; three 62 °C cases had minima at the positive grid boundary. A
+subsequently frozen, data-informed sensitivity analysis (v2, ±15 s grid)
+resolved all 16 and met the specified "consistent apparent alignment" rule:
+every estimate exceeded 0.3 s with a 95% cycle-bootstrap interval excluding
+zero. All 13 original point estimates were unchanged. This sensitivity result
+does not replace v1's verdict or constitute independent confirmation. Positive
+offsets mean resistance aligns with earlier reference strain. Under the
+available loading program, apparent alignment cannot distinguish timing
+offsets from branch asymmetry or other response effects; no mechanism is
+inferred. Electrode-sessions are not independent replicates.
+
+Experiment 10's offsets were 9.121 and 8.478 s. Neither electrode had an
+estimable cross-fitted loop-area collapse ratio: no evaluation cycle satisfied
+the required bin-coverage rule. Its alignment estimates therefore lack that
+secondary check; they must not be interpreted as measured acquisition delays.
+
 ## Leakage And Error Audits
 
 For all eight directions, five executable checks pass, with exactly zero

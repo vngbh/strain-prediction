@@ -205,6 +205,14 @@ def _preconditioning():
             100 * (ratio.max() - 1)]
 
 
+def _alignment():
+    v1 = _probe("reference_lag_per_electrode_session.csv")
+    v2 = _probe("reference_lag_v2_per_electrode_session.csv")
+    valid = lambda f: int((f.tau_s.notna() & f.ci_low.notna()).sum())
+    e10 = v2[(v2.temperature == 62) & (v2.experiment == 10)].sort_values("electrode").tau_s.tolist()
+    return [valid(v1), len(v1), valid(v2), *e10]
+
+
 def _median_rmse_across_positions():
     groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
     return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
@@ -272,6 +280,10 @@ CLAIMS = [
     (SENS, rf"mean HGB RMSE was {NUM}% versus {NUM}% for the\s+repository convention, a {NUM}% mean per-direction "
            rf"improvement, with {NUM}/8\s+directions improved and the worst direction {NUM}% worse",
      _preconditioning),
+    ("REPORT.md#Reference Alignment (direction branch)",
+     rf"returned insufficient coverage: {NUM}/{NUM} electrode-sessions were valid.*?"
+     rf"\(v2, ±15 s grid\)\s+resolved all {NUM} and.*?Experiment 10's offsets were {NUM} and {NUM} s",
+     _alignment),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
@@ -343,7 +355,7 @@ def gate_docs():
                 failures.append(f"{doc}: section heading found {text.count(heading)} times")
                 continue
             text = text.split(heading, 1)[1].split("\n## ", 1)[0]
-        hits = re.findall(pattern, text)
+        hits = re.findall(pattern, text, flags=re.S)
         if len(hits) != 1:
             failures.append(f"{doc}: locator matched {len(hits)} times (need exactly 1): {pattern}")
             continue

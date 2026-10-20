@@ -57,3 +57,33 @@ mechanism is inferred from any result.
 - Python 3.13.11; numpy 2.4.4; pandas 3.0.2; scipy 1.17.1.
 - Also report: margin effect on support (samples per session under 5 s vs
   15 s margins).
+
+## Result (appended after running; the sections above are unchanged since commit 81a4d86)
+
+Output: `research/probes/out/reference_lag_v2_per_electrode_session.csv`.
+Audited by Codex (round l6): source identical to 81a4d86 and to the registered
+hash; verdict reproduced from the CSV; support masks identical at both margins
+(separate disclosed check: no session's support changed).
+
+**Primary: consistent apparent alignment (no mechanism inferred).** 16/16
+valid; every estimate exceeded 0.3 s with a 95 % cycle-bootstrap interval
+excluding zero. All 13 original point estimates are unchanged; experiment 8
+electrode 1 gained a previously unresolved bootstrap draw and odd-cycle fit,
+which changed its interval and collapse values. This sensitivity result does
+not replace v1's verdict ("insufficient coverage") or constitute independent
+confirmation.
+
+Electrode differences (paired bootstrap): `tau1 - tau2` = +0.36..+0.64 s with
+intervals excluding zero in 7 sessions, and -0.44 s (interval excluding zero)
+at 33 degC experiment 4. Agreed wording: under a model where both channels
+differ from the reference solely through one shared acquisition offset and
+otherwise follow the fitted response model, equal offsets would be expected.
+The electrode differences challenge that restricted explanation. However,
+apparent alignment also absorbs electrode-specific branch asymmetry and other
+response differences; it cannot separate these from a shared timing
+contribution. The acquisition arrangement is undocumented.
+
+Experiment 10 caveat: its offsets were 9.121 and 8.478 s. Neither electrode had
+an estimable cross-fitted loop-area collapse ratio (no evaluation cycle met
+the bin-coverage rule), so these estimates lack that secondary check and must
+not be interpreted as measured acquisition delays.

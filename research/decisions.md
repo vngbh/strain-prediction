@@ -5,6 +5,18 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-20: Reference apparent alignment (branch `direction/reference-lag`)
+
+- v1 (frozen `b82b769`, +/-5 s): insufficient coverage (13/16; three +5 s edge
+  minima at 62 degC). v2 (data-informed sensitivity, frozen `81a4d86`,
+  +/-15 s, stopping rule): 16/16 valid, consistent positive apparent alignment
+  (1.8-9.1 s). Both verdicts kept; no mechanism inferred (one ramp rate makes
+  delay and branch asymmetry indistinguishable).
+- Electrode offsets differ consistently (7/8 sessions +0.36..+0.64 s), which
+  challenges a shared-acquisition-offset-only explanation without excluding a
+  shared contribution.
+- Status: completed diagnostic.
+
 ## 2026-10-20: Latent-state direction stopped by pre-registered gates
 
 - Branch `direction/latent-state-model`. Gates frozen in commit `052b2d0`
