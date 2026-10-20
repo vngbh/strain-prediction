@@ -276,6 +276,22 @@ estimable cross-fitted loop-area collapse ratio: no evaluation cycle satisfied
 the required bin-coverage rule. Its alignment estimates therefore lack that
 secondary check; they must not be interpreted as measured acquisition delays.
 
+## Static-Dynamic Gap Under Label Re-alignment (direction branch)
+
+The gap-contraction diagnostic was frozen in `e8a4e61`. Relative contraction
+of the mean static-minus-dynamic RMSE gap was 0.234 for oracle re-alignment,
+0.378 for source-constant re-alignment, 0.380 with original normalization
+retained, and 0.206 for cross-fitted offsets; gaps decreased in 7/8, 8/8, 7/8,
+and 6/8 directions, respectively. All met the conventional "partial
+contraction" rule. The oracle mean gap decreased from 0.02416 to 0.01850
+percentage points of strain. Group dependence was substantial: leave-one-group-
+out contraction ranged from 0.099–0.405 for oracle and 0.268–0.521 for
+source-constant alignment. These comparisons change the prediction target,
+training labels, scored rows, and usually normalization. They neither identify
+the fraction of the original advantage attributable to alignment nor establish
+dynamic-model insensitivity or a mechanism. Evidence:
+`research/probes/out/dynamic_gain_attribution_{per_fold,gaps}.csv`.
+
 ## Leakage And Error Audits
 
 For all eight directions, five executable checks pass, with exactly zero

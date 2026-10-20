@@ -213,6 +213,19 @@ def _alignment():
     return [valid(v1), len(v1), valid(v2), *e10]
 
 
+def _gap_contraction():
+    gaps = _probe("dynamic_gain_attribution_gaps.csv")
+    out = []
+    for arm in ("A1_oracle", "A2_source_constant", "A3_oracle_fixed_normalization"):
+        out.append(1 - gaps[f"G_{arm}"].mean() / gaps["G_A0"].mean())
+    out.append(1 - gaps["G_A4_crossfit"].mean() / gaps["G_A0_crossfit_subsets"].mean())
+    out += [int((gaps["G_A1_oracle"] < gaps["G_A0"]).sum()), int((gaps["G_A2_source_constant"] < gaps["G_A0"]).sum()),
+            int((gaps["G_A3_oracle_fixed_normalization"] < gaps["G_A0"]).sum()),
+            int((gaps["G_A4_crossfit"] < gaps["G_A0_crossfit_subsets"]).sum()),
+            gaps["G_A0"].mean(), gaps["G_A1_oracle"].mean()]
+    return out
+
+
 def _median_rmse_across_positions():
     groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
     return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
@@ -284,6 +297,11 @@ CLAIMS = [
      rf"returned insufficient coverage: {NUM}/{NUM} electrode-sessions were valid.*?"
      rf"\(v2, ±15 s grid\)\s+resolved all {NUM} and.*?Experiment 10's offsets were {NUM} and {NUM} s",
      _alignment),
+    ("REPORT.md#Static-Dynamic Gap Under Label Re-alignment (direction branch)",
+     rf"gap was {NUM} for oracle re-alignment,\s+{NUM} for source-constant re-alignment, {NUM} with original "
+     rf"normalization\s+retained, and {NUM} for cross-fitted offsets; gaps decreased in {NUM}/8, {NUM}/8, "
+     rf"{NUM}/8,\s+and {NUM}/8 directions.*?The oracle mean gap decreased from {NUM} to {NUM}",
+     _gap_contraction),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",

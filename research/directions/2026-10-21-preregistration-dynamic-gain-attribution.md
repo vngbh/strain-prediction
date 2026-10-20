@@ -96,3 +96,30 @@ physics RMSE; leave-one-temperature-group-out `F` for A1 and A2; A3 and A4 `F`.
   session, which can favour the static model; A4 reduces but does not remove
   this.
 - No mechanism (timing, branch asymmetry, response dynamics) is identified.
+
+## Result (appended after running; the sections above are unchanged since commit e8a4e61)
+
+Outputs: `research/probes/out/dynamic_gain_attribution_per_fold.csv`,
+`dynamic_gain_attribution_gaps.csv`. Sanity gate passed (A0 reproduces the
+repository static and dynamic RMSE). Audited by Codex (round g4): source
+identical to e8a4e61; every gap, F, verdict, and leave-one-group-out range
+reconstructs from the CSVs.
+
+| Arm | F | Smaller gap | Verdict |
+|---|---:|---:|---|
+| A1 oracle (diagnostic primary) | 0.234 | 7/8 | partial contraction |
+| A2 source-constant (transfer primary) | 0.378 | 8/8 | partial contraction |
+| A3 oracle, original normalization | 0.380 | 7/8 | partial contraction |
+| A4 cross-fitted oracle | 0.206 | 6/8 | partial contraction |
+
+Agreed wording (Codex round g4): over half the reference mean gap remains
+under this intervention. F is not an attributable fraction of the original
+advantage (targets, training labels, scored rows, and usually normalization
+change; offsets were selected on this corpus with a static-fit objective).
+Leave-one-group-out: A1 0.099-0.405, A2 0.268-0.521 (excluding 52 degC lifts
+A2 above 0.5).
+
+Withdrawn (Claude): "the dynamic advantage is not mainly explained by the
+alignment" (no causal bound is licensed) and "the dynamic model is insensitive
+to the alignment" (different targets; per-direction dynamic RMSE changes
+A1 - A0 range from -0.02211 to +0.01448 % strain, cancelling in the mean).

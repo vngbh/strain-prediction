@@ -5,6 +5,14 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-21: Static-dynamic gap under label re-alignment (branch `direction/dynamic-gain-attribution`)
+
+- Frozen `e8a4e61` after Codex rounds g1-g3. All four arms gave partial
+  contraction of the mean static-dynamic RMSE gap (F 0.206-0.380); over half
+  the reference gap remains under the intervention; strongly group-dependent.
+- Not licensed: attribution fractions, dynamic-model insensitivity, mechanism.
+- Status: completed diagnostic.
+
 ## 2026-10-20: Reference apparent alignment (branch `direction/reference-lag`)
 
 - v1 (frozen `b82b769`, +/-5 s): insufficient coverage (13/16; three +5 s edge
