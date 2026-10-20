@@ -31,7 +31,10 @@ estimated from four reference-level windows inside a fixed 125 s calibration
 prefix. The levels are zero plus 5%, 50%, and 95% of the observed calibration
 strain range. The low-strain window is `strain <= minimum + 0.02%`; the other windows
 use `+/-0.03%`. The two normalized electrode estimates are fused using a weight
-selected from these same calibration aggregates.
+selected from these same calibration aggregates. In every evaluated
+calibration, this constrained selector assigned zero weight to electrode 1, so
+the fused physics estimate is identical to electrode 2. Electrode 1 remains
+available to HGB separately through `z1` and its temporal features.
 
 A `HistGradientBoostingRegressor` then predicts strain **directly** from:
 
@@ -65,8 +68,9 @@ sessions. For every held-out temperature and direction (`A -> B`, `B -> A`):
 
 Source preprocessing mirrors this deployment transformation. Each of the six
 source sessions estimates its own `B`, `S`, and fusion weight from that same
-session's first 125 s. Those parameters normalize the remainder of that session;
-neither its full-session labels nor the opposite session are used to estimate
+session's first 125 s. Those parameters normalize that whole session, including
+its calibration prefix, whose rows are also HGB training rows; neither its
+full-session labels nor the opposite session are used to estimate
 its calibration parameters. Causal features are then constructed separately
 within each session before the six source feature matrices and targets are
 concatenated to train one global HGB.
@@ -121,7 +125,9 @@ measurement during calibration; it is not a calibration-free startup.
 full-scale strain. The weakest-prediction fold is 43 degC A-to-B, with
 `R2 = 0.430` and `RMSE = 0.112%` (about 1120 microstrain, 22.3% full scale).
 The smallest improvement is only 0.5% at 33 degC B-to-A; therefore “8/8” is a
-consistency description, not evidence of a large margin in every direction.
+consistency description, not evidence of a large margin in every direction. It
+also depends on calibration bookkeeping and on the position of the calibration
+window; see Calibration Sensitivity below.
 
 The reported 37.6% is the arithmetic mean of the eight per-direction relative
 improvements. The ratio of aggregate mean RMSEs is a different summary:
@@ -185,6 +191,43 @@ The model also uses rolling history up to 201 samples (20.1 s).
 This is a retrospective sensitivity analysis, not an independently tuned window
 selection. It shows that long causal history, rather than smoothing alone, is
 associated with reliable transfer in this corpus.
+
+## Calibration Sensitivity
+
+These analyses keep the frozen protocol and change only how or when the target
+calibration is taken. Scripts and outputs are in `research/probes/`; the
+direction note is
+`research/directions/2026-10-20-calibration-transfer-limits.md`.
+
+**Bookkeeping.** The four calibration aggregates are assigned their nominal
+strain levels, with exactly zero for the low band, although the low band's
+measured strain is slightly above zero. Assigning each aggregate its measured
+mean strain instead gives a mean per-direction improvement of 35.8%, a worst
+direction of -5.5%, and 7/8 improved directions. The average gain survives;
+the all-direction count does not.
+
+**Window position.** Sliding the 125 s calibration window every 10 s over the
+calibration session gives 813 dependent evaluations. Under nominal-level
+calibration, the frozen dynamic HGB outperformed matched physics across all
+sampled calibration positions in seven directions and 98/109 positions in the
+eighth. This demonstrates a broadly persistent relative advantage within this
+corpus, without establishing improved absolute accuracy at later positions.
+Later windows were associated with higher HGB RMSE in most directions but lower
+RMSE in one; window position, strain coverage, and low-band strain are strongly
+dependent within sessions, so no general calibration-selection rule was
+established.
+
+**Static versus dynamic across windows.** Over the same window positions, the
+dynamic HGB had lower RMSE than the static normalized HGB at every position in
+seven directions and 96/109 positions in the eighth. Averaged over directions,
+the median RMSE across positions was 0.0879% for physics, 0.0717% for static
+HGB, and 0.0496% for dynamic HGB.
+
+**What the temporal features represent.** Adding elapsed session time to the
+static inputs did not recover the dynamic model's performance, and an explicit
+causal loading-program state (branch, time since turning points, cycle count)
+recovered only part of the gap. Loading-program tracking and sensor-state
+mechanisms therefore remain unresolved.
 
 ## Leakage And Error Audits
 

@@ -161,6 +161,32 @@ def _row(table, variant, *columns):
     return lambda: [_summary(table).loc[variant, c] for c in columns]
 
 
+PROBES = ROOT / "research" / "probes" / "out"
+
+
+def _probe(name):
+    return pd.read_csv(PROBES / name)
+
+
+def _bookkeeping():
+    rows = _probe("calibration_bookkeeping.csv")
+    measured = rows[rows["convention"] == "measured_band_means"]["pct_improvement"]
+    return [measured.mean(), measured.min(), int((measured > 0).sum())]
+
+
+def _weak_fold_windows(name, better):
+    """[positions where `better` holds in the weakest direction, positions in it]."""
+    rows = _probe(name)
+    shares = rows.groupby(["temperature", "direction"]).apply(lambda d: better(d).mean())
+    weak = rows.set_index(["temperature", "direction"]).loc[shares.idxmin()]
+    return [int(better(weak).sum()), len(weak)]
+
+
+def _median_rmse_across_positions():
+    groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
+    return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
+
+
 def _ablation_row(label, variant):
     """REPORT 'Critical Ablations' table: mean improvement, worst direction."""
     return ("REPORT.md", rf"\| {label} \| \**{NUM}%\** \| \**{NUM}%\** \|",
@@ -207,6 +233,15 @@ CLAIMS = [
      _row(WIN, "history_to_101", "mean_pct_improvement", "worst_fold_pct_improvement")),
     ("REPORT.md", rf"\| \*\*Up to 201 samples\*\* \| \*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
      _row(WIN, "history_to_201", "mean_pct_improvement", "worst_fold_pct_improvement")),
+    # REPORT.md calibration sensitivity (research/probes/out)
+    ("REPORT.md", rf"measured\s+mean strain instead gives a mean per-direction improvement of {NUM}%, a worst\s+"
+                  rf"direction of {NUM}%, and {NUM}/8 improved directions", _bookkeeping),
+    ("REPORT.md", rf"sampled calibration positions in seven directions and {NUM}/{NUM} positions in the\s+eighth",
+     lambda: _weak_fold_windows("window_distribution.csv", lambda d: d.pct_improvement > 0)),
+    ("REPORT.md", rf"at every position in\s+seven directions and {NUM}/{NUM} positions in the eighth",
+     lambda: _weak_fold_windows("calibration_shift.csv", lambda d: d.dynamic_rmse < d.static_rmse)),
+    ("REPORT.md", rf"the median RMSE across positions was {NUM}% for physics, {NUM}% for static\s+HGB, "
+                  rf"and {NUM}% for dynamic HGB", _median_rmse_across_positions),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
