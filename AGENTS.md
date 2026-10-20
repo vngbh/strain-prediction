@@ -35,6 +35,7 @@ train on non-target temperatures -> freeze HGB
 | `results/manifest.json` | Versions, raw-data hashes, output hashes (regression reference) | reproducibility questions |
 | `REPORT.md` | Academic claims, results, limitations (canonical prose) | writing about results |
 | `ENGLISH_EXPLANATION.md` | Plain-language explanation | non-specialist audience |
+| `research/INDEX.md` | Catalogue of every direction ever tried, where it lives, and what to avoid | before starting anything new |
 | `research/decisions.md` | Dated decision log | before reviving or changing a choice |
 | `research/directions/` | Candidate research directions with kill criteria | planning new work |
 | `to_know_how/` (git-ignored) | Raw data, source paper, advisor comments, archive | data provenance |
@@ -85,6 +86,9 @@ Module dependency direction (no cycles): `spec <- {calibration, features, metric
 - Keep one method. Do not return to model shopping (ANN, CNN, LSTM, CWT, Optuna,
   ROCKET, residual learning, old diagnostic scripts) unless the user explicitly
   asks. Those were exploration/history; see `research/decisions.md`.
+- Never delete a tried direction. Superseded or failed work keeps a branch or an
+  `archive/*` tag and an entry in `research/INDEX.md`; check the index for
+  overlaps before starting new work.
 - New research directions go in `research/directions/` with a hypothesis, the
   analysis on existing data, and a kill criterion, before any code is written.
 
