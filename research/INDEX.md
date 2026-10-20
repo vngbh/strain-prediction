@@ -19,7 +19,7 @@ How to open an entry: `git checkout <branch-or-tag>` (read-only browsing), or
 | 2026-10 | `main`, tag `baseline-frozen-hgb-2026-10-20` | Frozen LOTO HGB with fixed 125 s calibration (current thesis method). | Kept (backup baseline). |
 | 2026-10 | branch `direction/calibration-transfer-limits` | What does short calibration limit, and what does the frozen model add? | Active findings + 6 rejected sub-ideas. |
 | 2026-10 | branch `direction/latent-state-model` | Shared latent network state observable from two electrodes? | Rejected by pre-registered gates. |
-| 2026-10 | branch `direction/reference-lag` | Is part of the "hysteresis" a time lag between sensor and reference gauge? | In progress (pre-registration under review). |
+| 2026-10 | branch `direction/reference-lag` | Is there a consistent apparent time alignment between the sensor and the reference gauge? | Completed diagnostic: v1 insufficient coverage, v2 consistent positive offsets; no mechanism. |
 
 ## 2026-04: Deep-learning exploration (`archive/2026-04-dl-exploration`)
 
@@ -100,9 +100,26 @@ Notes: `research/directions/2026-10-21-latent-state-model.md`,
 - Prior work occupying the broad idea: Wang 2021, Yong & Aw 2022, Amindehghan
   2021, Olowo 2023, Wu 2019 (DOIs in the notes).
 
-## 2026-10: Reference lag (branch `direction/reference-lag`)
+## 2026-10: Reference alignment (branch `direction/reference-lag`)
 
-In progress. See its pre-registration on that branch.
+Notes: `research/directions/2026-10-21-preregistration-reference-lag.md` (v1)
+and `...-reference-lag-v2.md` (v2); REPORT section "Reference Alignment" on
+that branch.
+
+- Completed diagnostic: v1 (+/-5 s) returned insufficient coverage (13/16);
+  data-informed v2 (+/-15 s; frozen in 81a4d86) resolved 16/16 and met the
+  apparent-alignment rule. Original point estimates unchanged; no mechanism
+  identified. Both verdicts and artifacts preserved. dataset0 remained sealed.
+- Offsets 1.8-4.6 s in most sessions, 8.5-9.1 s at 62 degC experiment 10
+  (no secondary collapse check possible there). Electrode offsets differ by
+  0.4-0.6 s in 7/8 sessions.
+- Avoid: reading harmonic-phase signs as evidence for or against a pure delay
+  (a synthetic exact delay reproduces the observed sign pattern); claiming a
+  temperature trend; calling the shift-only RMS an error floor.
+- Permanent limit: one near-constant ramp rate, so delay and rate-independent
+  branch asymmetry cannot be separated in this corpus.
+- Open (not done): whether the frozen HGB's dynamic gain is partly absorbing
+  this apparent alignment.
 
 ## Overlaps Found (do not repeat)
 
