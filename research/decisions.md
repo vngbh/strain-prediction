@@ -21,6 +21,11 @@ history.
   prespecified check (a source-selected single calibration offset is better,
   G5). REPORT now carries a Calibration Sensitivity section (bookkeeping,
   window position, static vs dynamic over positions) on this branch only.
+- Update (same day): matching source/target calibration timing rejected
+  (prespecified, 1/4 bins). First-cycle apparent sensitivity elevation kept as
+  a descriptive calibration finding (16/16 under branch-balanced cycle bins);
+  mechanism and novelty explicitly not claimed. Candidate literature still to
+  be checked against full text.
 
 ## 2026-10-20: Split the single script into the `src/strain/` package
 

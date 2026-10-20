@@ -136,6 +136,30 @@ timing to the deployment timing distribution" (testable by evaluating 0
 s-trained vs 480 s-trained models separately on early vs late target windows),
 and a Codex review of G5/G6 wording.
 
+### Round 3 of analyses: source calibration timing and the first cycle
+
+| ID | Analysis | Result | Script |
+|---|---|---|---|
+| H1 | Prespecified H_match vs H_mid: one model per single source offset, target calibration positions binned | H_match 1/4 bins: rejected. H_mid also fails literally (no single winner). Source offsets 240-480 s generally best; 0 s source wins some individual cells (33 and 43 degC A_to_B early windows). Bins are calibration positions, not test times. | `probes/probe_source_timing_match.py` |
+| H2 | Does F2 ("later calibration windows worse") depend on the source convention? | Under 480 s sources, 4 directions positive and 4 negative position-RMSE correlation; 43 degC directions keep opposite signs under every source offset. F2 holds for the 0 s convention and depends partly on source preprocessing. | same |
+| H3 | First-cycle apparent sensitivity | First cycle higher in 16/16 electrode-sessions under OLS (+1.6..+13.8%) and branch-balanced cycle bins over 0.20-0.45 % (+2.4..+14.4%); faster initial decline 13/16 (cycle bins), 14/16 (OLS); with a linear time term 12/16 higher, 4/16 faster decline. Codex additionally found 15-16/16 for band-mean, loading-only, unloading-only, and fixed-bin estimators. Temperature settling (<=0.1 degC, inconsistent sign) and strain-range change (<4%) do not explain it. | `probes/probe_first_window.py`, `probes/probe_first_cycle_estimators.py` |
+
+Agreed wording (Codex round 6): "Across eight sessions from one embedded
+sensor/specimen, initial-cycle apparent resistance-reference-strain slopes
+exceeded later-cycle slopes under several estimators, including
+branch-balanced fitting over a common strain interval." Unsupported: a named
+mechanism (network conditioning, after-rest recovery, Mullins softening),
+that it explains the history-feature gain, and any generalization beyond this
+specimen. Changing strain transfer to the surface gauge and gauge/adhesive
+settling are not excluded.
+
+Literature status: Montazerian et al. 2019 (Compos. B 164:648, CF/PDMS
+yarns) and Mu et al. 2023 (Polymers 15:3379, filler dimensionality and
+resistive viscoelasticity) exist (Crossref-verified titles). Codex states they
+report first-cycle overshoot / cycling attenuation; Claude could not confirm
+this from the abstracts. The student must check the full texts before citing
+them for that specific claim.
+
 ## Kill Criteria
 
 - If relationships between calibration content and transfer error reverse

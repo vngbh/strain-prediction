@@ -229,6 +229,24 @@ causal loading-program state (branch, time since turning points, cycle count)
 recovered only part of the gap. Loading-program tracking and sensor-state
 mechanisms therefore remain unresolved.
 
+**First-cycle apparent sensitivity.** Across the eight sessions and both
+electrodes, the apparent resistance–reference-strain slope of the first
+loading cycle exceeded that of later cycles under several estimators. With
+branch-balanced, equal-weight strain bins over a common 0.20–0.45% interval,
+the first cycle was higher in 16/16 electrode-session combinations, by 2.4% to
+14.4% relative to the median of cycles 3–7. A faster initial decline held in
+13/16. Adding a linear time term to window regressions reduces the first-higher
+agreement to 12/16, so a changing baseline is not excluded. These 16
+combinations come from one sensor and specimen and share confounders; they are
+not independent confirmations. The mechanism (conductive-network conditioning,
+changing strain transfer between the embedded sensor and the surface reference
+gauge, or reference-gauge settling) is not identified. Cycle-dependent piezoresistive response is
+reported for other carbon-filler polymer strain sensors (candidate references,
+to be confirmed against full text: Montazerian et al. 2019,
+doi:10.1016/j.compositesb.2019.01.090; Mu et al. 2023,
+doi:10.3390/polym15163379), so the phenomenon is not claimed as new; its relevance here is that the default
+calibration window falls on the first cycle.
+
 ## Leakage And Error Audits
 
 For all eight directions, five executable checks pass, with exactly zero

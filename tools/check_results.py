@@ -189,6 +189,14 @@ def _weak_fold_windows(name, better):
     return [int(better(weak).sum()), len(weak)]
 
 
+def _first_cycle():
+    rows = _probe("first_cycle_estimators.csv")
+    bins, timed = rows["cycle_bins_first_vs_later_pct"], rows["ols_time_first_vs_later_pct"]
+    return [int((bins > 0).sum()), len(rows), bins.min(), bins.max(),
+            int(rows["cycle_bins_faster_initial_decline"].astype(bool).sum()), len(rows),
+            int((timed > 0).sum()), len(rows)]
+
+
 def _median_rmse_across_positions():
     groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
     return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
@@ -249,6 +257,10 @@ CLAIMS = [
      lambda: _weak_fold_windows("calibration_shift.csv", lambda d: d.dynamic_rmse < d.static_rmse)),
     (SENS, rf"the median RMSE across positions was {NUM}% for physics, {NUM}% for static\s+HGB, "
                   rf"and {NUM}% for dynamic HGB", _median_rmse_across_positions),
+    (SENS, rf"the first cycle was higher in {NUM}/{NUM} electrode-session combinations, by {NUM}% to\s+"
+           rf"{NUM}% relative to the median of cycles 3–7\. A faster initial decline held in\s+{NUM}/{NUM}\. "
+           rf"Adding a linear time term to window regressions reduces the first-higher\s+agreement to {NUM}/{NUM}",
+     _first_cycle),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
