@@ -5,6 +5,19 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-20: Recommended research direction (branch `direction/calibration-transfer-limits`)
+
+- Decision: proposed reframing to "calibration transfer limits" plus "static vs
+  temporal information" (see `directions/2026-10-20-calibration-transfer-limits.md`).
+- Open issue: under measured-band-mean calibration bookkeeping the final variant
+  improves 7/8 directions (worst -5.5%), not 8/8. Not yet reflected in REPORT.md;
+  needs a declared sensitivity analysis, not a silent substitution.
+- Process: Claude vs Codex adversarial debate, evidence in `probes/`.
+- Status: proposed. First analyses F1-F5 done the same day (see the direction
+  file): no general calibration-window rule (kill criterion met for that
+  sub-claim); fusion is degenerate (electrode 2 only); the program control
+  explains about half of the dynamic gain but does not match it.
+
 ## 2026-10-20: Split the single script into the `src/strain/` package
 
 - Decision: one module per responsibility; calibration (label access) and
