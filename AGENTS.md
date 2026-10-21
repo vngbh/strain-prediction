@@ -78,9 +78,10 @@ Module dependency direction (no cycles): `spec <- {calibration, features, metric
 - `session_signals(df, ...)` without `calibration_source` self-calibrates from
   `df`'s own prefix. Only source-session preprocessing may do that; target
   evaluation must pass the opposite session explicitly.
-- On branch `direction/latent-state-model` and its descendants, `dataset0.csv` is SEALED
-  (since 2026-10-20) as a one-shot confirmation set: never load, plot, or summarize it
-  except in its pre-registered confirmatory run.
+- `dataset0.csv` was sealed on 2026-10-20 and CONSUMED on 2026-10-21 by the
+  one-shot confirmation on `direction/reference-lag` (marker
+  `research/probes/out/dataset0_CONSUMED.json`). No untouched data remain;
+  never present any later analysis as untouched confirmation.
 - No additional measurements can be collected. Never make completion depend on
   future data; state unsupported generalization as a permanent scope boundary.
 
