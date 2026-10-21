@@ -1,0 +1,15 @@
+{
+  "opened_at": "2026-10-21T11:06:06.614399+09:00",
+  "git_head": "ea86e3bba12179d355fcc005fb756f2137214406",
+  "python": "3.13.11",
+  "packages": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scipy": "1.17.1"
+  },
+  "status": "completed",
+  "P1": false,
+  "P2": true,
+  "P3": true,
+  "output": "research/probes/out/reference_lag_confirm_dataset0.csv"
+}

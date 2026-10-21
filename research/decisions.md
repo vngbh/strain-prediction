@@ -5,6 +5,15 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-21: One-shot dataset0 confirmation of apparent alignment: not confirmed
+
+- Frozen `ea86e3b` after Codex rounds c1-c4; run once at 11:06. P1 not
+  confirmed (21 degC offsets +0.095 / -0.159 s); P2 and exploratory P3 met.
+- The positive apparent-alignment finding stays limited to 33-62 degC
+  development sessions; no temperature dependence or mechanism established.
+- dataset0 consumed; no untouched data remain. No retry.
+- Status: completed confirmation (negative for the primary prediction).
+
 ## 2026-10-20: Reference apparent alignment (branch `direction/reference-lag`)
 
 - v1 (frozen `b82b769`, +/-5 s): insufficient coverage (13/16; three +5 s edge

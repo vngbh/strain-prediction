@@ -93,3 +93,34 @@ not priority.
 - A non-confirmation is reported as such; the v2 result is then limited to
   33-62 degC, and no further estimator change may be tried on dataset0.
 - After this run dataset0 is no longer sealed; no untouched data remain.
+
+## Result (appended after the single run; the sections above are unchanged since commit ea86e3b)
+
+Run once at 2026-10-21 11:06:06 +09:00 (marker
+`research/probes/out/dataset0_CONSUMED.json`, status completed). Gate passed
+before access. Output `research/probes/out/reference_lag_confirm_dataset0.csv`.
+Audited by Codex (round c5): source identical to ea86e3b, pins matched,
+verdicts recomputed from the CSV.
+
+| Prediction | Result |
+|---|---|
+| P1 (primary) | **NOT CONFIRMED**: electrode 1 +0.095 s [0.046, 0.153]; electrode 2 -0.159 s [-0.217, -0.090] |
+| P2 (secondary) | met: paired difference [0.236, 0.268] s |
+| P3 (exploratory) | met: two-electrode mean -0.032 s < 2.6175 s |
+
+Agreed wording (Codex round c5): the prespecified positive apparent-alignment
+finding remains limited to the eight development sessions at 33-62 degC. This
+single additional session from the same specimen establishes neither
+temperature dependence nor mechanism and does not exclude a shared
+acquisition-offset contribution. Acquisition comparability is undocumented.
+"Near zero" describes magnitude only (both intervals exclude zero).
+
+Withdrawn (Claude): "a fixed acquisition offset would appear at every
+temperature, so this argues against a constant acquisition offset" (apparent
+alignment also absorbs response differences; a constant timing contribution
+could coexist with changing response effects). Viscoelastic strain transfer
+may be named only as one untested possibility alongside acquisition/setup
+differences and branch asymmetry.
+
+dataset0 was consumed on 2026-10-21 and is no longer sealed; no untouched
+data remain. No confirmatory retry.

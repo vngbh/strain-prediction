@@ -276,6 +276,20 @@ estimable cross-fitted loop-area collapse ratio: no evaluation cycle satisfied
 the required bin-coverage rule. Its alignment estimates therefore lack that
 secondary check; they must not be interpreted as measured acquisition delays.
 
+The one-shot dataset0 confirmation, preregistered in ea86e3b, did not confirm
+primary prediction P1. At approximately 21 °C, experiment 2 yielded apparent
+offsets of +0.095 s (95% cycle-bootstrap interval [0.046, 0.153]) and
+−0.159 s ([−0.217, −0.090]). Secondary prediction P2 was met: the paired
+electrode-difference interval was [0.236, 0.268] s. Exploratory prediction P3
+was met: the two-electrode mean was −0.032 s, below the 33 °C development mean
+of 2.6175 s. Thus, the prespecified positive apparent-alignment finding remains
+limited to the eight development sessions at 33–62 °C. This single additional
+session from the same specimen establishes neither temperature dependence nor
+mechanism and does not exclude a shared acquisition-offset contribution.
+Acquisition comparability is undocumented. Intervals remain conditional on the
+cycle-bootstrap assumptions and 100 resamples. No untouched confirmation data
+remain.
+
 ## Leakage And Error Audits
 
 For all eight directions, five executable checks pass, with exactly zero
