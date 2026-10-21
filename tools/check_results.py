@@ -226,6 +226,13 @@ def _gap_contraction():
     return out
 
 
+def _confirmation():
+    rows = _probe("reference_lag_confirm_dataset0.csv").sort_values("electrode")
+    e1, e2 = rows.iloc[0], rows.iloc[1]
+    return [e1.tau_s, e1.ci_low, e1.ci_high, e2.tau_s, e2.ci_low, e2.ci_high,
+            e1.session_diff_ci_low, e1.session_diff_ci_high, rows.tau_s.mean()]
+
+
 def _median_rmse_across_positions():
     groups = _probe("calibration_shift.csv").groupby(["temperature", "direction"])
     return groups[["physics_rmse", "static_rmse", "dynamic_rmse"]].median().mean().tolist()
@@ -302,6 +309,10 @@ CLAIMS = [
      rf"normalization\s+retained, and {NUM} for cross-fitted offsets; gaps decreased in {NUM}/8, {NUM}/8, "
      rf"{NUM}/8,\s+and {NUM}/8 directions.*?The oracle mean gap decreased from {NUM} to {NUM}",
      _gap_contraction),
+    ("REPORT.md#Reference Alignment (direction branch)",
+     rf"offsets of \+{NUM} s \(95% cycle-bootstrap interval \[{NUM}, {NUM}\]\) and\s+−{NUM} s "
+     rf"\(\[−{NUM}, −{NUM}\]\)\..*?interval was \[{NUM}, {NUM}\] s\..*?the two-electrode mean was −{NUM} s",
+     lambda: [abs(v) if i in (3, 4, 5, 8) else v for i, v in enumerate(_confirmation())]),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",
