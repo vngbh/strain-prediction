@@ -19,7 +19,7 @@ How to open an entry: `git checkout <branch-or-tag>` (read-only browsing), or
 | 2026-10 | `main`, tag `baseline-frozen-hgb-2026-10-20` | Frozen LOTO HGB with fixed 125 s calibration (current thesis method). | Kept (backup baseline). |
 | 2026-10 | branch `direction/calibration-transfer-limits` | What does short calibration limit, and what does the frozen model add? | Active findings + 6 rejected sub-ideas. |
 | 2026-10 | branch `direction/latent-state-model` | Shared latent network state observable from two electrodes? | Rejected by pre-registered gates. |
-| 2026-10 | branch `direction/reference-lag` | Is there a consistent apparent time alignment between the sensor and the reference gauge? | Completed diagnostic: v1 insufficient coverage, v2 consistent positive offsets; no mechanism. |
+| 2026-10 | branch `direction/reference-lag` | Is there a consistent apparent time alignment between the sensor and the reference gauge? | Completed: v1 insufficient coverage; v2 consistent positive offsets at 33-62 degC; one-shot dataset0 (21 degC) confirmation NOT confirmed. |
 | 2026-10 | branch `direction/dynamic-gain-attribution` | Does re-aligning labels by the apparent offset contract the static-dynamic gap? | Completed diagnostic: partial contraction in all arms (F 0.21-0.38). |
 
 ## 2026-04: Deep-learning exploration (`archive/2026-04-dl-exploration`)
@@ -119,6 +119,11 @@ that branch.
   temperature trend; calling the shift-only RMS an error floor.
 - Permanent limit: one near-constant ramp rate, so delay and rate-independent
   branch asymmetry cannot be separated in this corpus.
+- One-shot dataset0 confirmation (frozen ea86e3b): P1 not confirmed; P2 met;
+  exploratory P3 met. The 21 degC session yielded +0.095/-0.159 s. Positive
+  apparent alignment remains a 33-62 degC development finding; no temperature
+  dependence or mechanism established. Preserve the confirmation CSV and
+  consumption marker. No confirmatory retry.
 - Follow-up done on branch `direction/dynamic-gain-attribution` (below).
 
 ## 2026-10: Static-dynamic gap under label re-alignment (branch `direction/dynamic-gain-attribution`)
@@ -146,6 +151,6 @@ Notes: `research/directions/2026-10-21-preregistration-dynamic-gain-attribution.
 ## Data Constraints (permanent)
 
 - No new measurements exist or will exist (user, 2026-10-20).
-- `dataset0.csv` (21 degC) is sealed as a one-shot confirmation set from
-  2026-10-20 on the direction branches; earlier exposure: April EDA, July
-  Phase E/F as a temperature point, one October probe.
+- dataset0 was consumed on 2026-10-21 and is no longer sealed; no untouched
+  data remain. Earlier exposure is disclosed in the confirmation
+  preregistration (`direction/reference-lag`).
