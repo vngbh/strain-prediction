@@ -6,6 +6,9 @@ can be reused, cited, or deliberately avoided. Read this before starting
 anything new: several "new" analyses in October 2026 turned out to repeat July
 2026 work (see Overlaps).
 
+Synthesis of the October 2026 cycle: `research/SYNTHESIS.md`. Verbatim
+Claude-Codex debate transcripts: `research/debates/`.
+
 How to open an entry: `git checkout <branch-or-tag>` (read-only browsing), or
 `git show <tag>:<path>` for a single file.
 
