@@ -27,7 +27,10 @@ session:
 | Raw HGB + target low-strain offset, no `T` | 0.0821% strain | 0.631 | -16.1% | -82.0% |
 
 The normalized method improves the matched physical baseline in all eight
-directional evaluations from four temperature groups. All groups share one
+directional evaluations from four temperature groups under the repository's
+nominal-level calibration bookkeeping; with measured band-mean calibration
+levels it improves 7 of 8, with a similar mean gain (see `REPORT.md`,
+Calibration Sensitivity). All groups share one
 sensor/specimen and are not independent sensor replicates. This is retrospective
 internal leave-one-temperature-out evidence, not external validation.
 
@@ -47,7 +50,7 @@ rows are dropped or padded across sessions.
 - Ridge fails its worst direction (-108.7%).
 - Residual HGB, centered features, and HGB with `T` each fail one direction.
 - The final causal, no-`T`, direct HGB is the only tested variant that improves
-  every direction.
+  every direction (under nominal-level calibration bookkeeping).
 - Raw HGB works within a temperature but fails when the held-out temperature
   changes. Among the tested variants, offset-and-sensitivity normalization
   provides the best mean transfer performance and the fewest failed directions.
@@ -59,6 +62,11 @@ rows are dropped or padded across sessions.
   prediction difference. No leakage was detected in these tested data-access
   paths and boundaries; this is not a proof that every possible leakage path is
   absent.
+- October 2026 robustness checks (`REPORT.md`): the advantage over physics
+  persists across sampled calibration-window positions, and the temporal
+  inputs help beyond elapsed time and an explicit loading-program state; what
+  they capture is unresolved, so the gain is not described as learning
+  hysteresis.
 - The final configuration is fixed inside the reported outer folds, but its
   family, calibration duration, features, and history lengths were selected
   retrospectively after examining this corpus. The result is not presented as
@@ -86,7 +94,11 @@ results/manifest.json                    # versions, data hashes, output hashes
 REPORT.md                                # academic interpretation and limitations
 ENGLISH_EXPLANATION.md                   # simple-language explanation
 AGENTS.md                                # rules for coding agents (CLAUDE.md imports it)
-research/                                # decision log and candidate directions
+research/SYNTHESIS.md                    # what the October 2026 analyses found
+research/INDEX.md                        # every direction ever tried, and what to avoid
+research/directions/, research/probes/   # pre-registrations, analysis scripts, outputs
+research/debates/                        # verbatim Claude-Codex review transcripts
+research/decisions.md                    # dated decision log
 ```
 
 Raw data (`to_know_how/`) and local progress-report documents (`docs/`) are

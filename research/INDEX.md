@@ -19,11 +19,12 @@ How to open an entry: `git checkout <branch-or-tag>` (read-only browsing), or
 | 2026-04 | tag `archive/2026-04-dl-exploration` (`code/`, `history/`) | Which ML/DL model predicts strain best (ANN, LSTM, CNN-1D, CNN+LSTM, CWT-CNN, Optuna; cross-temperature LOO)? | Superseded. Several numbers invalid (see below). |
 | 2026-07 | tag `archive/2026-07-diagnosis` (`research_diagnosis/`) | Why does cross-temperature generalization fail? Phases A-H2. | Superseded by the HGB protocol; many findings still valid. |
 | 2026-09 | tag `archive/2026-09-hgb-development` (`src/physics_normalized_tree_boosting.py`) | Physics-normalized tree boosting, within-temperature development, dynamic-feature ablation. | Superseded by the frozen protocol. |
-| 2026-10 | `main`, tag `baseline-frozen-hgb-2026-10-20` | Frozen LOTO HGB with fixed 125 s calibration (current thesis method). | Kept (backup baseline). |
-| 2026-10 | branch `direction/calibration-transfer-limits` | What does short calibration limit, and what does the frozen model add? | Active findings + 6 rejected sub-ideas. |
-| 2026-10 | branch `direction/latent-state-model` | Shared latent network state observable from two electrodes? | Rejected by pre-registered gates. |
-| 2026-10 | branch `direction/reference-lag` | Is there a consistent apparent time alignment between the sensor and the reference gauge? | Completed: v1 insufficient coverage; v2 consistent positive offsets at 33-62 degC; one-shot dataset0 (21 degC) confirmation NOT confirmed. |
-| 2026-10 | branch `direction/dynamic-gain-attribution` | Does re-aligning labels by the apparent offset contract the static-dynamic gap? | Completed diagnostic: partial contraction in all arms (F 0.21-0.38). |
+| 2026-10 | tag `baseline-frozen-hgb-2026-10-20` | Frozen LOTO HGB with fixed 125 s calibration, before the October analyses. | Kept (pre-integration backup). |
+| 2026-10-24 | `main` | The thesis with all four October branches merged and the proposed corrections applied. | Current thesis. |
+| 2026-10 | branch `direction/calibration-transfer-limits` | What does short calibration limit, and what does the frozen model add? | Merged into main; findings + 6 rejected sub-ideas. Branch kept as archive. |
+| 2026-10 | branch `direction/latent-state-model` | Shared latent network state observable from two electrodes? | Rejected by pre-registered gates. Merged into main; branch kept as archive. |
+| 2026-10 | branch `direction/reference-lag` | Is there a consistent apparent time alignment between the sensor and the reference gauge? | Completed: v1 insufficient coverage; v2 consistent positive offsets at 33-62 degC; one-shot dataset0 (21 degC) confirmation NOT confirmed. Merged into main; branch kept as archive. |
+| 2026-10 | branch `direction/dynamic-gain-attribution` | Does re-aligning labels by the apparent offset contract the static-dynamic gap? | Completed diagnostic: partial contraction in all arms (F 0.21-0.38). Merged into main; branch kept as archive. |
 
 ## 2026-04: Deep-learning exploration (`archive/2026-04-dl-exploration`)
 

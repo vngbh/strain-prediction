@@ -124,7 +124,11 @@ deployable; 43 degC is drift-heavy). This led to `research/INDEX.md`, the
 
 ## 4. Proposed Corrections To The Thesis (`main`)
 
-Not yet applied to `main`; per `AGENTS.md` they need the user's decision.
+Applied to `main` on 2026-10-24 after the user delegated the decision
+("do what you think is reasonable"): the four branches were merged and
+`REPORT.md`, `README.md`, `ENGLISH_EXPLANATION.md`, and the reporting rules in
+`AGENTS.md` were updated. The pre-integration thesis is kept at tag
+`baseline-frozen-hgb-2026-10-20`.
 
 1. Do not describe the dynamic gain as "learning hysteresis". Temporal inputs
    improved performance under the tested configuration; what they capture is

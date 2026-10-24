@@ -64,6 +64,11 @@ The weakest test is 43 degC A-to-B, with `R2 = 0.430` and `RMSE = 0.112%`
 strain. The method is
 therefore promising, but it is not equally accurate in every condition.
 
+The "8 out of 8" depends on a calibration bookkeeping detail. If the
+calibration points use the strain actually measured in each band instead of
+the nominal levels, 7 of 8 tests improve, although the average gain stays
+similar.
+
 ## What Proves Each Part Matters
 
 - Physical normalization without any dynamic features helps on average by only
@@ -72,7 +77,8 @@ therefore promising, but it is not equally accurate in every condition.
   better. Physics and dynamics therefore do different jobs.
 - Smoothing alone makes the average result 6.7% worse.
 - Linear Ridge regression fails badly in its worst test (-108.7%).
-- A nonlinear tree model with causal features improves all tests.
+- A nonlinear tree model with causal features improves all tests (with the
+  standard calibration bookkeeping).
 - Adding temperature makes one unseen-temperature direction 50.5% worse, so the
   final frozen tree deliberately omits it.
 - A frozen model trained on raw resistance, even with temperature as an input,
@@ -83,11 +89,28 @@ therefore promising, but it is not equally accurate in every condition.
   `T`, is still insufficient: mean `R2 = 0.631`, and only 3 of 8 directions
   improve.
 - The physically normalized frozen model reaches mean `R2 = 0.859` and improves
-  all 8 tests.
+  all 8 tests (7 of 8 if the calibration uses measured band strains).
 
 This is the strongest evidence that physical normalization is useful for
 transfer, while causal nonlinear dynamic learning contributes more than either
 static normalized learning or simple smoothing.
+
+## What The October 2026 Checks Added
+
+- The advantage over physics does not depend on one lucky calibration moment:
+  it persists when the 125-second calibration window is moved through the
+  session.
+- The signal-history features really help, but they are not simply "learning
+  hysteresis". Part of their benefit matches knowing where the sensor is in
+  the loading cycle; part matches a timing mismatch between the sensor and the
+  reference gauge; the rest is unexplained.
+- The sensor and the surface reference gauge appear offset in time by a few
+  seconds at 33-62 degC, but this did not reappear in the one 21 degC session
+  that was kept aside for a single confirmation test.
+- The first loading cycle of every session looks more sensitive than later
+  cycles, yet skipping it before calibration did not help.
+- No untouched data are left, so these remain findings about this one sensor
+  and loading program.
 
 ## Application
 
@@ -113,7 +136,8 @@ every conceivable implementation error.
 > tested temperatures and sessions after a short physical calibration. Physics
 > normalization gives the best mean transfer and the fewest failed directions
 > among the tested variants, and nonlinear dynamic machine learning improves the
-> matched physical baseline in every evaluated direction.
+> matched physical baseline in every evaluated direction under the standard
+> calibration bookkeeping.
 
 This is machine learning, not deep learning. The contribution is the complete
 physics-plus-ML method and its careful validation, not a new tree algorithm.

@@ -300,19 +300,25 @@ CLAIMS = [
     (SENS, rf"mean HGB RMSE was {NUM}% versus {NUM}% for the\s+repository convention, a {NUM}% mean per-direction "
            rf"improvement, with {NUM}/8\s+directions improved and the worst direction {NUM}% worse",
      _preconditioning),
-    ("REPORT.md#Reference Alignment (direction branch)",
+    ("REPORT.md#Reference Alignment",
      rf"returned insufficient coverage: {NUM}/{NUM} electrode-sessions were valid.*?"
      rf"\(v2, ±15 s grid\)\s+resolved all {NUM} and.*?Experiment 10's offsets were {NUM} and {NUM} s",
      _alignment),
-    ("REPORT.md#Static-Dynamic Gap Under Label Re-alignment (direction branch)",
+    ("REPORT.md#Static-Dynamic Gap Under Label Re-alignment",
      rf"gap was {NUM} for oracle re-alignment,\s+{NUM} for source-constant re-alignment, {NUM} with original "
      rf"normalization\s+retained, and {NUM} for cross-fitted offsets; gaps decreased in {NUM}/8, {NUM}/8, "
      rf"{NUM}/8,\s+and {NUM}/8 directions.*?The oracle mean gap decreased from {NUM} to {NUM}",
      _gap_contraction),
-    ("REPORT.md#Reference Alignment (direction branch)",
+    ("REPORT.md#Reference Alignment",
      rf"offsets of \+{NUM} s \(95% cycle-bootstrap interval \[{NUM}, {NUM}\]\) and\s+−{NUM} s "
      rf"\(\[−{NUM}, −{NUM}\]\)\..*?interval was \[{NUM}, {NUM}\] s\..*?the two-electrode mean was −{NUM} s",
      lambda: [abs(v) if i in (3, 4, 5, 8) else v for i, v in enumerate(_confirmation())]),
+    ("REPORT.md#What Is Actually Supported",
+     rf"bookkeeping \({NUM} of 8 directions with\s+> measured band-mean levels", lambda: [_bookkeeping()[2]]),
+    ("README.md", rf"with measured band-mean calibration\s+levels it improves {NUM} of 8", lambda: [_bookkeeping()[2]]),
+    ("ENGLISH_EXPLANATION.md", rf"instead of\s+the nominal levels, {NUM} of 8 tests improve", lambda: [_bookkeeping()[2]]),
+    ("ENGLISH_EXPLANATION.md", rf"improves\s+all 8 tests \({NUM} of 8 if the calibration uses measured band strains\)",
+     lambda: [_bookkeeping()[2]]),
     # README.md
     ("README.md", rf"\| Frozen causal HGB \+ 125 s calibration \| \*\*{NUM}% strain\*\* \| \*\*{NUM}\*\* \| "
                   rf"\*\*{NUM}%\*\* \| \*\*{NUM}%\*\* \|",

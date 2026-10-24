@@ -146,7 +146,7 @@ calibration, and opposite-session testing.
 
 | Check | Mean RMSE improvement | Worst fold | Interpretation |
 |---|---:|---:|---|
-| **Causal, no-`T`, direct HGB (final)** | **37.6%** | **+0.5%** | Only variant improving all directions |
+| **Causal, no-`T`, direct HGB (final)** | **37.6%** | **+0.5%** | Only variant improving all directions (nominal-level bookkeeping) |
 | Static normalized HGB (no dynamic features) | 5.1% | -91.0% | Normalization alone is insufficient for reliable transfer |
 | Residual-target HGB | 24.2% | -49.4% | Fails one direction |
 | Centered derivative HGB | 35.2% | -6.2% | Uses future samples and fails one direction |
@@ -194,9 +194,17 @@ associated with reliable transfer in this corpus.
 
 ## Calibration Sensitivity
 
+This and the next two sections report the October 2026 robustness and
+diagnostic analyses (overview: `research/SYNTHESIS.md`). They were developed on
+separate branches with Claude-Codex adversarial review (transcripts in
+`research/debates/`), several of them pre-registered by git commit before
+running, and were merged into this report on 2026-10-24. They use the same
+previously explored corpus, so they are internal evidence, not untouched
+confirmation.
+
 These analyses retain source-only fitting and frozen target evaluation while
-varying calibration conventions, window positions, or feature sets. Scripts and outputs are in `research/probes/`; the
-direction note is
+varying calibration conventions, window positions, or feature sets. Scripts and
+outputs are in `research/probes/`; the direction note is
 `research/directions/2026-10-20-calibration-transfer-limits.md`.
 
 **Bookkeeping.** The four calibration aggregates are assigned their nominal
@@ -256,7 +264,7 @@ directions improved and the worst direction 30.0% worse. Mean physics-only RMSE
 increased slightly. The first-cycle observation therefore does not translate
 into a supported calibration-protocol change in this corpus.
 
-## Reference Alignment (direction branch)
+## Reference Alignment
 
 The original pre-registered apparent-alignment analysis (v1, ±5 s grid)
 returned insufficient coverage: 13/16 electrode-sessions were valid, below the
@@ -290,7 +298,7 @@ Acquisition comparability is undocumented. Intervals remain conditional on the
 cycle-bootstrap assumptions and 100 resamples. No untouched confirmation data
 remain.
 
-## Static-Dynamic Gap Under Label Re-alignment (direction branch)
+## Static-Dynamic Gap Under Label Re-alignment
 
 The gap-contraction diagnostic was frozen in `e8a4e61`. Relative contraction
 of the mean static-minus-dynamic RMSE gap was 0.234 for oracle re-alignment,
@@ -371,12 +379,22 @@ result:
 > physically interpretable four-level calibration. Among the tested variants,
 > offset-and-sensitivity normalization gives the best mean cross-temperature
 > transfer and the fewest failed directions, while dynamic nonlinear learning
-> improves over the matched physical baseline in every evaluated direction.
+> improves over the matched physical baseline in every evaluated direction under
+> the repository's nominal-level calibration bookkeeping (7 of 8 directions with
+> measured band-mean levels, with a similar mean gain).
 
 The method is machine learning, not deep learning. Physics supplies a stable
 coordinate system; HGB learns the remaining nonlinear and history-dependent
 mapping. The model predicts strain directly, so it must not be described as
 learning only a residual.
+
+The temporal inputs improve performance under the tested configuration, but
+what they capture is unresolved, so the dynamic gain must not be described as
+"learning hysteresis". Elapsed session time does not reproduce it, an explicit
+loading-program state reproduces only part of it, and re-aligning the labels by
+the apparent sensor-reference offset contracts the static-dynamic gap only
+partially (see Calibration Sensitivity and Static-Dynamic Gap Under Label
+Re-alignment).
 
 ## Limitations
 
@@ -393,12 +411,26 @@ learning only a residual.
   bonded HBM LY11-6/350 strain gauge; its full uncertainty budget is unavailable.
 - The strict static-feature ablation shows that causal history materially
   improves transfer, but does not prove that all of this gain comes specifically
-  from hysteresis rather than drift or other time-dependent effects.
+  from hysteresis rather than drift or other time-dependent effects. The October
+  2026 diagnostics narrow this but do not resolve it: elapsed time does not
+  explain the gain, a loading-program state explains part of it, and label
+  re-alignment contracts the static-dynamic gap only partially.
+- "Improves all 8 directions" holds under nominal-level calibration
+  bookkeeping; with measured band-mean levels one direction degrades. The
+  constrained fusion selector uses electrode 2 only.
+- The reference measurement is not a perfect instantaneous truth for the
+  embedded sensor: at 33-62 degC the sensor resistance aligns with reference
+  strain from earlier times by seconds (a data-informed sensitivity result),
+  this was not confirmed in the one 21 degC session, and the first loading
+  cycle shows a higher apparent slope. Sensor, specimen, reference, and
+  acquisition contributions cannot be separated with one loading program.
 - Accuracy has not been compared with an application-specific alarm threshold,
   so industrial SHM readiness is not claimed.
 - With no possibility of additional measurements, generalization to another
   sensor, geometry, material, loading rate, or long-term aging remains outside
-  the evidence available to this thesis.
+  the evidence available to this thesis. The only data not used in development
+  (`dataset0`, 21 degC) were consumed by the one-shot alignment confirmation on
+  2026-10-21, so no untouched data remain for any future confirmation.
 
 ## Reproduce
 
@@ -411,3 +443,13 @@ causality/label-access audit, regional error analysis, per-temperature results,
 and `results/figures/frozen_protocol_audit.png`.
 Best- and lowest-R2 time traces are in
 `results/figures/frozen_best_worst_predictions.png`.
+
+```bash
+python3 tools/check_results.py
+```
+
+This gate reproduces the outputs into an empty directory, checks that injected
+leaks are detected, and checks registered numbers in this report against their
+CSV sources. The October 2026 analyses are reproduced by the scripts in
+`research/probes/` (usage in each docstring); their outputs are in
+`research/probes/out/`.

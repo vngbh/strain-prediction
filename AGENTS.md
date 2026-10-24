@@ -52,8 +52,9 @@ Module dependency direction (no cycles): `spec <- {calibration, features, metric
 
 | Branch / tag | Content | Rule |
 |---|---|---|
-| `main`, tag `baseline-frozen-hgb-2026-10-20` | The current research (frozen physics-normalized HGB) | Backup of the thesis as it stands. Only refactors that keep `tools/check_results.py` passing, and fixes the user asks for. |
-| `direction/<name>` | One new research direction each (files in `research/directions/`, `research/probes/`) | All new-direction work, including REPORT changes it motivates, stays on its branch until the user decides to merge. |
+| `main` | The thesis with the October 2026 analyses integrated (merged 2026-10-24 at the user's delegation) | Only refactors that keep `tools/check_results.py` passing, and changes the user asks for. |
+| tag `baseline-frozen-hgb-2026-10-20` | The thesis before the October 2026 analyses | Never moved; the pre-integration backup. |
+| `direction/<name>` | One research direction each (files in `research/directions/`, `research/probes/`) | New-direction work stays on its branch until the user decides to merge. The four October 2026 branches are merged and kept as archives. |
 
 ## 3. Glossary
 
@@ -101,6 +102,15 @@ Module dependency direction (no cycles): `spec <- {calibration, features, metric
 ## 6. Reporting Rules
 
 - Describe the method as machine learning / AI, not deep learning.
+- Do not describe the dynamic gain as "learning hysteresis"; what the temporal
+  inputs capture is unresolved (`REPORT.md`, "What Is Actually Supported").
+- "Improves all 8 directions" must carry its calibration-bookkeeping
+  qualifier (one direction degrades with measured band-mean levels).
+- The fused physics estimate is electrode 2 (zero fusion weight on
+  electrode 1); do not describe it as a two-electrode fusion.
+- The sensor-reference apparent alignment is a 33-62 degC sensitivity
+  result, not confirmed at 21 degC, with no mechanism; never call it a
+  measured delay.
 - The novelty is the application method: target calibration and physical
   normalization plus a globally frozen causal HGB readout. Do not claim a new
   algorithm.

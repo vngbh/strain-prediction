@@ -5,6 +5,23 @@ status (`kept`, `rejected`, `superseded by <date>`). Read this before reviving
 or changing a design choice. Dates before 2026-10-20 are reconstructed from git
 history.
 
+## 2026-10-24: October analyses integrated into main; thesis corrections applied
+
+- The user delegated the decision ("do what you think is reasonable"). The
+  four direction branches were merged into `main` (fast-forward to the tip
+  that already contained all of them); all three checker gates passed before
+  editing.
+- Applied the five corrections from `research/SYNTHESIS.md` Section 4 to
+  `REPORT.md`, `README.md`, `ENGLISH_EXPLANATION.md`, and added matching
+  reporting rules to `AGENTS.md`. New numbers are registered checker claims.
+- The pre-integration thesis stays at tag `baseline-frozen-hgb-2026-10-20`;
+  the branches remain as archives.
+- Review status, disclosed: these edits were NOT reviewed by Codex. A
+  multi-agent verification workflow was started and then stopped before it
+  returned findings, because the user asked to push without further
+  verification. Checked only by the docs gate (all registered claims pass).
+- Status: kept.
+
 ## 2026-10-21: One-shot dataset0 confirmation of apparent alignment: not confirmed
 
 - Frozen `ea86e3b` after Codex rounds c1-c4; run once at 11:06. P1 not
