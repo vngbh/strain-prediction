@@ -1,0 +1,5 @@
+1. **Pins are not enforced.** The script checks the v2 estimator hash, but never validates the gate CSV hash, `spec.py` hash, or pinned environment before accessing dataset0. Recording installed versions does not enforce them. P3 also rereads the unverified gate CSV.
+
+2. **Post-access failures do not reliably report NOT CONFIRMED.** Hash mismatch exits without that verdict; parsing, analysis, and output failures leave the marker at `"opened; analysis not finished"`. P1 can even print CONFIRMED before a later failure. Wrap post-access processing so failures record and report NOT CONFIRMED while preserving the consumption marker.
+
+3. **P3 checks nonmissing values, not finite values.** `v.notna().sum() == 2` accepts infinities. Require exactly two electrode estimates and `np.isfinite(v).all()` before comparing their mean with the exact gate-CSV threshold.
