@@ -1,0 +1,7 @@
+Round g4: audit of the frozen gap-contraction run. Rules: no compliments, evidence only, read-only (scratch under /private/tmp/claude-501/-Users-vngbh-Documents-Lab-strain-prediction/3df42ce0-5621-4e6e-b361-13433d3a8869/scratchpad/codex/, MPLCONFIGDIR there). dataset0 SEALED. Under 500 words.
+
+Frozen in e8a4e61; Claude ran it -> research/probes/out/dynamic_gain_attribution_per_fold.csv and _gaps.csv (untracked). Printed: sanity gate passed. F: A1 oracle 0.234 (7/8), A2 source-constant 0.378 (8/8), A3 fixed-normalization 0.380 (7/8), A4 cross-fit 0.206 (6/8) -> all "partial contraction". Leave-one-group-out A1: 0.099-0.405; A2: 0.268-0.521. Mean RMSE: physics 0.0881 -> 0.0793 (A1), static 0.0726 -> 0.0674, dynamic 0.0484 -> 0.0489.
+
+1. Verify source identity (e8a4e61) and every verdict from the CSVs.
+2. Attack Claude's planned interpretation: "Re-aligning labels by the apparent offset removes roughly a fifth to two-fifths of the mean static-dynamic RMSE gap (partial contraction in all arms); most of the gap remains. Physics and static RMSE improve under re-alignment while dynamic RMSE is nearly unchanged, so the dynamic model's accuracy is largely insensitive to the alignment, and its advantage is not mainly explained by it. The contraction is heterogeneous across temperature groups." Over-reach? Is "not mainly explained" licensed by F < 0.5 given the estimand caveats? Is "dynamic insensitive" valid when its RMSE is measured against a different target?
+3. Give exact REPORT and INDEX wording.
